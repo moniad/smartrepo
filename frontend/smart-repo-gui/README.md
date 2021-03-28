@@ -1,4 +1,4 @@
-# smart-repo-frontend
+# smart-repo-gui
 
 ## Project setup
 ```
