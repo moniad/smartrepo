@@ -103,6 +103,7 @@
   </v-sheet>
 </template>
 <script>
+import axios from 'axios';
 export default {
   name: "home",
   data: () => ({
@@ -148,6 +149,26 @@ export default {
     },
   },
   methods: {
+    startup() {
+      console.log("Page initiation done.")
+      this.getComp1Status()
+    },
+    getComp1Status: function() {
+      axios.get("http://localhost:8080/status/comp1")
+              .then(async response => {
+        if (response.status === 200) {
+          console.log("Status of \"comp1\": " + response.data)
+        } else {
+          console.log("ERROR: Cannot get component status from server! (" + response.status + ")")
+        }
+      })
+      .catch(error => {
+        console.error("An error occurred during receiving response!\n", error);
+      })
+    }
+  },
+  created() {
+    this.startup()
   }
 };
 </script>
