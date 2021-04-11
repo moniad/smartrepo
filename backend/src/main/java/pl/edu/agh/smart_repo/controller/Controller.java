@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
+import pl.edu.agh.smart_repo.common.file.FileService;
 import pl.edu.agh.smart_repo.indexer.IndexerService;
 import pl.edu.agh.smart_repo.parser.ParserService;
 import pl.edu.agh.smart_repo.service.SearchService;
@@ -24,6 +25,8 @@ public class Controller {
     IndexerService indexerService;
     @Autowired
     ParserService parserService;
+    @Autowired
+    FileService fileService;
 
     @GetMapping("/search/{phrase}")
     @ResponseBody
@@ -42,6 +45,9 @@ public class Controller {
         try {
             Resource resource = new ClassPathResource("parsable-documents/pdf/Easy-to-parse-document.pdf");
             File file = resource.getFile();
+            if(!fileService.hasAcceptableExtension(file)){
+                return new ResponseEntity<>("ERROR while adding. Unacceptable file format.", HttpStatus.UNPROCESSABLE_ENTITY);
+            }
             path = file.getAbsolutePath();
         } catch (IOException e) {
             e.printStackTrace();
