@@ -10,6 +10,7 @@ import pl.edu.agh.smart_repo.common.results.Result;
 import pl.edu.agh.smart_repo.request_handler.uploader.FileUploadHandler;
 import pl.edu.agh.smart_repo.request_handler.uploader.file_saver.FileSaver;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
+import pl.edu.agh.smart_repo.common.file.FileService;
 import pl.edu.agh.smart_repo.indexer.IndexerService;
 import pl.edu.agh.smart_repo.parser.ParserService;
 import pl.edu.agh.smart_repo.service.SearchService;
@@ -31,6 +32,8 @@ public class Controller {
     ParserService parserService;
     @Autowired
     FileUploadHandler fileUploadHandler;
+    @Autowired
+    FileService fileService;
 
     @GetMapping("/search/{phrase}")
     @ResponseBody
@@ -49,6 +52,9 @@ public class Controller {
         try {
             Resource resource = new ClassPathResource("parsable-documents/pdf/Easy-to-parse-document.pdf");
             File file = resource.getFile();
+            if(!fileService.hasAcceptableExtension(file)){
+                return new ResponseEntity<>("ERROR while adding. Unacceptable file format.", HttpStatus.UNPROCESSABLE_ENTITY);
+            }
             path = file.getAbsolutePath();
 
             // path should lead to folder on server
@@ -58,7 +64,6 @@ public class Controller {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
 
         if (path != null) {
             DocumentStructure documentStructure = parserService.parse(path);
