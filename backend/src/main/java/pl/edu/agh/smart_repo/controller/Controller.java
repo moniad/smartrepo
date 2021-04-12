@@ -6,6 +6,9 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import pl.edu.agh.smart_repo.common.results.Result;
+import pl.edu.agh.smart_repo.request_handler.uploader.FileUploadHandler;
+import pl.edu.agh.smart_repo.request_handler.uploader.file_saver.FileSaver;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
 import pl.edu.agh.smart_repo.indexer.IndexerService;
 import pl.edu.agh.smart_repo.parser.ParserService;
@@ -13,7 +16,9 @@ import pl.edu.agh.smart_repo.service.SearchService;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
+
 
 @RestController
 public class Controller {
@@ -24,6 +29,8 @@ public class Controller {
     IndexerService indexerService;
     @Autowired
     ParserService parserService;
+    @Autowired
+    FileUploadHandler fileUploadHandler;
 
     @GetMapping("/search/{phrase}")
     @ResponseBody
@@ -43,9 +50,15 @@ public class Controller {
             Resource resource = new ClassPathResource("parsable-documents/pdf/Easy-to-parse-document.pdf");
             File file = resource.getFile();
             path = file.getAbsolutePath();
+
+            // path should lead to folder on server
+            Result result = fileUploadHandler.processFile(file, "pdfs");
+            System.out.println("Saving file: " + result.toString());
+
         } catch (IOException e) {
             e.printStackTrace();
         }
+
 
         if (path != null) {
             DocumentStructure documentStructure = parserService.parse(path);
