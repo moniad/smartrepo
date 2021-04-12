@@ -1,0 +1,5 @@
+ciasteczko-potworze.wav;Ty potworze!
+ciasteczko-zwirek.wav;Żwirek kręci z muchomorkiem.
+czekam-na.wav;Czekam na cnego rycerza, który zwróci mi wolność. No bardzo fajnie, a teraz chodź.
+Osiolkiem-wlascicielka.wav;Nie wydawaj mnie, nie będę już uparty, wiesz ja się zmienię serio tylko daj mi szansę. Oh zamknij się. Au.
+Pinokio.wav;Następny. Co tam masz? Tę małą drewnianą kukiełkę. Nie jestem kukiełką, jestem zwykłym chłopcem.
