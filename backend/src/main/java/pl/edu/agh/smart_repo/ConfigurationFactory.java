@@ -6,6 +6,8 @@ import pl.edu.agh.smart_repo.indexer.Indexer;
 import pl.edu.agh.smart_repo.indexer.lucene.LuceneIndexer;
 import pl.edu.agh.smart_repo.parser.Parser;
 import pl.edu.agh.smart_repo.parser.tika.TikaParser;
+import pl.edu.agh.smart_repo.translation.Translator;
+import pl.edu.agh.smart_repo.translation.translators.MyMemoryTranslator;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +40,10 @@ public class ConfigurationFactory {
     public Parser getParser()
     {
         return new TikaParser();
+    }
+
+    public Translator getTranslator() {
+        return new MyMemoryTranslator();
     }
 
 }
