@@ -6,8 +6,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import pl.edu.agh.smart_repo.common.Result;
-import pl.edu.agh.smart_repo.common.ResultType;
+import pl.edu.agh.smart_repo.common.results.Result;
+import pl.edu.agh.smart_repo.request_handler.uploader.FileUploadHandler;
 import pl.edu.agh.smart_repo.request_handler.uploader.file_saver.FileSaver;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
 import pl.edu.agh.smart_repo.indexer.IndexerService;
@@ -16,9 +16,9 @@ import pl.edu.agh.smart_repo.service.SearchService;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
+
 
 @RestController
 public class Controller {
@@ -29,6 +29,8 @@ public class Controller {
     IndexerService indexerService;
     @Autowired
     ParserService parserService;
+    @Autowired
+    FileUploadHandler fileUploadHandler;
 
     @GetMapping("/search/{phrase}")
     @ResponseBody
@@ -49,15 +51,11 @@ public class Controller {
             File file = resource.getFile();
             path = file.getAbsolutePath();
 
-
             // path should lead to folder on server
-            // folder should already exists
-            FutureTask<Result> fileSaveResultFuture = runFileSaveThread(file, "pdfs");
-            // Do other stuff
-            Result result = fileSaveResultFuture.get();
+            Result result = fileUploadHandler.processFile(file, "pdfs");
             System.out.println("Saving file: " + result.toString());
 
-        } catch (IOException | InterruptedException | ExecutionException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -73,13 +71,4 @@ public class Controller {
         return new ResponseEntity<>("ERROR while adding", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    private FutureTask<Result> runFileSaveThread(File file, String path){
-        FileSaver fileSaver = new FileSaver(file, path);
-        FutureTask<Result> futureTask = new FutureTask<>(fileSaver);
-
-        Thread thread = new Thread(futureTask);
-        thread.start();
-
-        return futureTask;
-    }
 }
