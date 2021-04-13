@@ -11,9 +11,9 @@ const repoModule = {
     },
     actions: {
         uploadFiles(
-            { commit, dispatch, rootGetters, getters, rootState, state }, form
+            { commit, dispatch, rootGetters, getters, rootState, state }, file
         ) {
-            axios.post("http://localhost:7777/upload", form,
+            axios.post("http://localhost:7777/upload", file,
                 {
                     headers: {
                         'Content-Type': 'multipart/form-data'
@@ -22,9 +22,9 @@ const repoModule = {
             )
                 .then(async response => {
                     if (response.status === 200) {
-                        console.log("Status of \"comp1\": " + response.data)
+                        console.log("Response: " + response.data)
                     } else {
-                        console.log("ERROR: Cannot get component status from server! (" + response.status + ")")
+                        console.log("ERROR: (" + response.status + ")")
                     }
                 })
                 .catch(error => {

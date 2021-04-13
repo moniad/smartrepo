@@ -11,6 +11,14 @@ import pl.edu.agh.smart_repo.parser.ParserService;
 import pl.edu.agh.smart_repo.request_handler.uploader.FileUploadHandler;
 import pl.edu.agh.smart_repo.service.SearchService;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Objects;
+
 @RestController
 public class FileController {
 
@@ -25,14 +33,19 @@ public class FileController {
     @Autowired
     FileService fileService;
 
-    @PostMapping(value = "/upload")
+    @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
     @ResponseBody
-    public ResponseEntity<String> indexFile(@RequestBody MultipartFile file) {
-        System.out.println("getName file: " + file.getName());
-        System.out.println("getOriginalFilename file: " + file.getOriginalFilename());
-        System.out.println("getContentType file: " + file.getContentType());
-//        System.out.println("Saving file: " + file.toString());
-//        System.out.println("Saving file: " + file.toString());
+    public ResponseEntity<String> indexFile(@RequestParam("files") MultipartFile file) throws IOException {
+        System.out.println("file: " + file.getName());
+        File convFile = new File(Objects.requireNonNull(file.getOriginalFilename()));
+        convFile.createNewFile();
+        FileOutputStream fos = new FileOutputStream(convFile);
+        fos.write(file.getBytes());
+        fos.close();
+        System.out.println("convFile: " + convFile);
+        System.out.println("convFile.getAbsolutePath: " + convFile.getAbsolutePath());
+        System.out.println("convFile.getName: " + convFile.getName());
+        System.out.println("convFile.getName: " + convFile.toURI());
 
         return new ResponseEntity<>("added file", HttpStatus.OK);
     }

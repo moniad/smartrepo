@@ -80,10 +80,12 @@ export default {
     },
     submitFiles(){
       let formData = new FormData();
-      for(let i = 0; i < this.fileList.length; i++ ){
-        let file = this.fileList[i];
-        formData.append('files[' + i + ']', file);
-      }
+      // for(let i = 0; i < this.fileList.length; i++ ){
+      //   let file = this.fileList[i];
+      //   formData.append('files[' + i + ']', file);
+      // }
+      formData.append('files',this.fileList[0])
+      console.log(formData.get('files'))
       this.uploadFiles(formData)
     },
     onChange() {
