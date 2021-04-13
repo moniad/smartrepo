@@ -1,0 +1,18 @@
+
+Nagłówek
+W tym dokumencie pojawiają się już literóówki, duzo zdjeć do sparsowania, czasem są też
+błendy ortograficzne takie jak grzegrzułka. Pierwszy wykres się tez pojawia. Ciekawe, czy
+parsery sobie z tym poradzo :D Trzeba wyciągnąć dane tekstowe z wykresu już. Pojawiają
+się tż obrazki z textem. Zangielszczenia również w cenie.
+
+Ciekawe, czy algorytm utożsami “cztery” z cyfrą.
+
+I inna czcionka, dosc nieczytelna:
+
+Pacyficzn� czcionk� odzwierciedlając� charakte� pisan�. Teoretyczni� liter� napisan� r�żnym�
+czcionkam� ciągl� s� tym� samym� literam�, wie� chyb� bęą� ta� sam� kodowan�. M�ż� powinna�
+te� c�� nieczytelni� napisa�, ab� utrudni� proce�?
+
+
+
+

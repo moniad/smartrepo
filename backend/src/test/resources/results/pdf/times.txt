@@ -1,0 +1,6 @@
+OCR-Difficult-to-parse-document.pdf:19274378400
+Easy-to-parse-document.pdf:461193000
+OCR-Easy-to-parse-document.pdf:1512911000
+Medium-easy-to-parse-document.pdf:978325000
+OCR-Medium-easy-to-parse-document.pdf:4404277100
+Difficult-to-parse-document.pdf:3575204700
