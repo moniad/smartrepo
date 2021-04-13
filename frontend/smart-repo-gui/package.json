@@ -9,8 +9,11 @@
   },
   "dependencies": {
     "@mdi/font": "^5.9.55",
+    "axios": "^0.21.1",
+    "bootstrap": "^4.6.0",
+    "bootstrap-vue": "^2.21.2",
     "core-js": "^3.6.5",
-    "vue": "^2.6.11",
+    "vue": "^2.6.12",
     "vue-file-agent": "^1.7.3",
     "vue-fragment": "^1.5.2",
     "vue-router": "^3.2.0",
