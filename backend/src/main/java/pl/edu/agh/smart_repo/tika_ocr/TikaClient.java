@@ -27,8 +27,8 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
 public class TikaClient {
-    private static final String path = "backend/src/test/resources/parsable-documents/pdf/";
-    private static final String resultsPath = "backend/src/test/resources/results/pdf/";
+    private static final String path = "backend/src/main/resources/parsable-documents/pdf/";
+    private static final String resultsPath = "backend/src/main/resources/results/pdf/";
 
     public static void main(String[] args) throws Exception {
 

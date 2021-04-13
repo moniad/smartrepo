@@ -1,0 +1,2 @@
+samples.wav;What's the weather like?
+enspk1_0.wav;The first commercial flights took place between the United States and Canada in 1919.
