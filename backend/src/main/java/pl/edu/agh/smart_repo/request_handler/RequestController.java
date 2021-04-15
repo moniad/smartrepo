@@ -1,4 +1,4 @@
-package pl.edu.agh.smart_repo.controller;
+package pl.edu.agh.smart_repo.request_handler;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 @RestController
-public class FileController {
+public class RequestController {
 
     @Autowired
     SearchService searchService;
