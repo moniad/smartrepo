@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import pl.edu.agh.smart_repo.ConfigurationFactory;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentFields;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
+import pl.edu.agh.smart_repo.common.results.Result;
+import pl.edu.agh.smart_repo.common.results.ResultType;
 
 import java.util.List;
 
@@ -19,9 +21,10 @@ public class IndexerService {
         this.indexer = configurationFactory.getIndexer();
     }
 
-    public void indexDocument(DocumentStructure documentStructure)
+    public Result indexDocument(DocumentStructure documentStructure)
     {
         indexer.indexDocument(documentStructure);
+        return new Result(ResultType.SUCCESS);
     }
 
     public List<String> search(DocumentFields documentField, String phrase)
