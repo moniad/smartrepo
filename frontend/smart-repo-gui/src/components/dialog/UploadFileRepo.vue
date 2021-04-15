@@ -76,6 +76,7 @@ export default {
   methods: {
     ...mapActions("repo",["uploadFiles"]),
     cancel() {
+      this.fileList =[]
       this.active = !this.active
     },
     submitFiles(){
@@ -87,6 +88,7 @@ export default {
       formData.append('files',this.fileList[0])
       console.log(formData.get('files'))
       this.uploadFiles(formData)
+      this.cancel()
     },
     onChange() {
       this.fileList.push(...this.$refs.file.files)
