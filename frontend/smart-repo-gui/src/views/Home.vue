@@ -151,10 +151,10 @@ export default {
   methods: {
     startup() {
       console.log("Page initiation done.")
-      this.getComp1Status()
+      // this.getComp1Status()
     },
     getComp1Status: function() {
-      axios.get("http://localhost:8080/status/comp1")
+      axios.get("http://localhost:7777/status/comp1")
               .then(async response => {
         if (response.status === 200) {
           console.log("Status of \"comp1\": " + response.data)
