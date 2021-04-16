@@ -27,13 +27,16 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
 public class TikaClient {
-    private static final String path = "backend/src/main/resources/parsable-documents/pdf/";
-    private static final String resultsPath = "backend/src/main/resources/results/pdf/";
+    private static final String pathToPdfs = "backend/src/main/resources/parsable-documents/pdf/";
+    private static final String pathToImgs = "backend/src/main/resources/parsable-images/";
+    private static final String resultsPath = "backend/src/main/resources/results/";
 
     public static void main(String[] args) throws Exception {
 
-        File f = new File(path);
-        String[] fileNames = f.list();
+        File f = new File(pathToPdfs);
+        String[] pdfFileNames = f.list();
+        f = new File(pathToImgs);
+        String[] imgFileNames = f.list();
         TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
         Map<String, Long> times = new HashMap<>();
 
@@ -45,56 +48,24 @@ public class TikaClient {
         System.out.println(eng+": "+langDetector.detect(eng).getLanguage());
         System.out.println(de+": "+langDetector.detect(de).getLanguage());
 
-        assert fileNames != null;
-        for (String fileName : fileNames) {
 
-            long startTime = System.nanoTime();
-            Metadata metadata = new Metadata();
-            String textWithOCR = parseWithOCR(fileName, tikaConfig, metadata);
-
-            long endTime = System.nanoTime();
-            long timeElapsed = endTime - startTime;
-            times.put("OCR-"+fileName, timeElapsed);
-            System.out.println("With OCR:  Execution time for file " + fileName + " in seconds: " +
-                    timeElapsed / 1000000000);
-
-            Path resultFilePath = Paths.get(resultsPath+"OCR-"+fileName.split("\\.")[0]+".txt");
-            try {
-                Files.createFile(resultFilePath);
-
-            } catch (FileAlreadyExistsException ex) {
-                // no problem here
-            }
-            byte[] strToBytes = textWithOCR.getBytes();
-            Files.write(resultFilePath, strToBytes);
-
-            startTime = System.nanoTime();
-            tikaConfig = TikaConfig.getDefaultConfig();
-            metadata = new Metadata();
-            String text = parseText(fileName, tikaConfig, metadata);
-
-            endTime = System.nanoTime();
-            timeElapsed = endTime - startTime;
-
-            System.out.println("Text only: Execution time for file " + fileName + " in seconds: " +
-                    timeElapsed / 1000000000);
-            times.put(fileName, timeElapsed);
-            resultFilePath = Paths.get(resultsPath+fileName.split("\\.")[0]+".txt");
-            try {
-                Files.createFile(resultFilePath);
-
-            } catch (FileAlreadyExistsException ex) {
-                // no problem here
-            }
-            strToBytes = text.getBytes();
-            Files.write(resultFilePath, strToBytes);
+        assert imgFileNames != null;
+        for (String fileName : imgFileNames) {
+            measureTimeForFile(pathToImgs, "images/", fileName, tikaConfig, true, times);
         }
+
+        assert pdfFileNames != null;
+        for (String fileName : pdfFileNames) {
+            measureTimeForFile(pathToPdfs, "pdfs/OCR-", fileName, tikaConfig, true, times);
+            measureTimeForFile(pathToPdfs, "pdfs/", fileName, tikaConfig, false, times);
+        }
+
         File file = new File(resultsPath+"times.txt");
         writeHashMapToFile(file,times);
     }
 
-    public static String parseWithOCR(String filename, TikaConfig tikaConfig,
-                                      Metadata metadata) throws Exception {
+    public static String parseText(String path, String filename, TikaConfig tikaConfig,
+                                      Metadata metadata, Boolean withOCR) throws Exception {
         System.out.println("Examining: [" + filename + "]");
 
         InputStream stream = TikaInputStream.get(Paths.get(path+filename));
@@ -114,45 +85,20 @@ public class TikaClient {
 
         // Have the file parsed to get the content and metadata
         ContentHandler handler = new BodyContentHandler();
-
-        TesseractOCRConfig config = new TesseractOCRConfig();
-        //config.setLanguage("eng");
-        PDFParserConfig pdfConfig = new PDFParserConfig();
-        pdfConfig.setExtractInlineImages(true);
-
         ParseContext parseContext = new ParseContext();
-        parseContext.set(TesseractOCRConfig.class, config);
-        parseContext.set(PDFParserConfig.class, pdfConfig);
-        parseContext.set(Parser.class, parser); //need to add this to make sure recursive parsing happens!
 
+        if(withOCR) {
+            TesseractOCRConfig config = new TesseractOCRConfig();
+
+            PDFParserConfig pdfConfig = new PDFParserConfig();
+            pdfConfig.setExtractInlineImages(true);
+
+            parseContext.set(TesseractOCRConfig.class, config);
+            parseContext.set(PDFParserConfig.class, pdfConfig);
+            parseContext.set(Parser.class, parser); //need to add this to make sure recursive parsing happens!
+        }
 
         parser.parse(stream, handler, metadata, parseContext);
-
-        return handler.toString();
-    }
-
-    public static String parseText(String filename, TikaConfig tikaConfig,
-                                      Metadata metadata) throws Exception {
-        System.out.println("Examining: [" + filename + "]");
-
-        InputStream stream = TikaInputStream.get(Paths.get(path+filename));
-        Detector detector = tikaConfig.getDetector();
-
-        LanguageDetector langDetector = new OptimaizeLangDetector().loadModels();
-        LanguageResult lang = langDetector.detect(FileUtils.readFileToString(new File(path+filename), UTF_8));
-
-        System.out.println("The language of this content is: ["
-                + lang.getLanguage() + "]");
-
-        // Get a non-detecting parser that handles all the types it can
-        Parser parser = tikaConfig.getParser();
-        // Tell it what we think the content is
-        MediaType type = detector.detect(stream, metadata);
-        metadata.set(Metadata.CONTENT_TYPE, type.toString());
-
-        // Have the file parsed to get the content and metadata
-        ContentHandler handler = new BodyContentHandler();
-        parser.parse(stream, handler, metadata, new ParseContext());
 
         return handler.toString();
     }
@@ -167,5 +113,29 @@ public class TikaClient {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void measureTimeForFile(String path, String resultsPathEnd, String fileName,
+                                          TikaConfig tikaConfig, Boolean withOCR,
+                                          Map<String,Long> times) throws Exception {
+        long startTime = System.nanoTime();
+        Metadata metadata = new Metadata();
+        String text = parseText(path, fileName, tikaConfig, metadata, withOCR);
+
+        long endTime = System.nanoTime();
+        long timeElapsed = endTime - startTime;
+        times.put(fileName, timeElapsed);
+        System.out.println("Execution time for file " + fileName + " in seconds: " +
+                timeElapsed / 1000000000);
+
+        Path resultFilePath = Paths.get(resultsPath + resultsPathEnd + fileName.split("\\.")[0] + ".txt");
+        try {
+            Files.createFile(resultFilePath);
+
+        } catch (FileAlreadyExistsException ex) {
+            // no problem here
+        }
+        byte[] strToBytes = text.getBytes();
+        Files.write(resultFilePath, strToBytes);
     }
 }
