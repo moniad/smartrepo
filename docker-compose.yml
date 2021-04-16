@@ -1,0 +1,23 @@
+version: '2'
+services:
+    smart-repo-backend:
+        container_name: smart-repo-backend
+        build:
+            context: backend
+            dockerfile: Dockerfile
+        image: smart-repo-backend:latest
+        ports:
+            - 7777:7777
+    smart-repo-gui:
+            container_name: smart-repo-gui
+            build:
+                context: frontend/smart-repo-gui
+                dockerfile: Dockerfile
+            image: smart-repo-gui:latest
+            ports:
+                - 8080:8080
+            networks:
+                - smart-repo-network
+networks:
+    smart-repo-network:
+        driver: bridge
