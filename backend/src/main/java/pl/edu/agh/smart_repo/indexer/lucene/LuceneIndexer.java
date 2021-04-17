@@ -15,6 +15,7 @@ import org.apache.lucene.store.FSDirectory;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentFields;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
 import pl.edu.agh.smart_repo.indexer.Indexer;
+import pl.edu.agh.smart_repo.indexer.TextCannotBeIndexedException;
 
 import java.io.*;
 import java.nio.file.Paths;
@@ -66,7 +67,7 @@ public class LuceneIndexer implements Indexer {
             TopDocs docs = searcher.search(q, hitsPerPage);
             ScoreDoc[] hits = docs.scoreDocs;
 
-            for(int i=0;i<hits.length;++i) {
+            for (int i=0;i<hits.length;++i) {
                 int docId = hits[i].doc;
                 Document d = searcher.doc(docId);
 
@@ -75,6 +76,7 @@ public class LuceneIndexer implements Indexer {
 
         } catch (ParseException | IOException e) {
             e.printStackTrace();
+            throw new TextCannotBeIndexedException();
         }
 
         return results;
