@@ -1,0 +1,40 @@
+version: "3.7"
+
+services:
+  pdf_tika:
+    build:
+      context: ../parsers/pdf_tika
+      args:
+        - RABBITMQ_HOST=${RABBITMQ_HOST}
+    restart: unless-stopped
+    networks:
+      rabbit-network:
+    volumes:
+      - ../storage:/storage
+    depends_on:
+      - rabbitmq
+  txt_tika:
+    build:
+      context: ../parsers/txt_tika
+      args:
+        - RABBITMQ_HOST=${RABBITMQ_HOST}
+    restart: unless-stopped
+    networks:
+      rabbit-network:
+    volumes:
+      - ../storage:/storage
+    depends_on:
+      - rabbitmq
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      rabbit-network:
+        aliases:
+          - ${RABBITMQ_HOST}
+
+networks:
+  rabbit-network:

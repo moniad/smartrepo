@@ -17,7 +17,8 @@ import java.nio.file.Paths;
 @Service
 public class ConfigurationFactory {
 
-    private final static Path filesCatalogPath = Paths.get(System.getProperty("user.dir"), "files");;
+    //private final static Path filesCatalogPath = Paths.get(System.getProperty("user.dir"), "files");
+    private final static Path filesCatalogPath = Paths.get("C:/tmp_files_path");
     private final static String indexDir = "/index";
 
     public Indexer getIndexer()

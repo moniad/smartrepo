@@ -28,12 +28,22 @@ public class Controller {
     SearchService searchService;
     @Autowired
     IndexerService indexerService;
-    @Autowired
-    ParserService parserService;
+    //@Autowired
+    //ParserService parserService;
     @Autowired
     FileUploadHandler fileUploadHandler;
     @Autowired
     FileService fileService;
+
+    @GetMapping("/test/{phrase}")
+    @ResponseBody
+    public ResponseEntity<Void> test(@PathVariable String phrase) {
+        if (phrase.equals("txt"))
+            fileUploadHandler.put_txt();
+        if (phrase.equals("pdf"))
+            fileUploadHandler.put_pdf();
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 
     @GetMapping("/search/{phrase}")
     @ResponseBody
@@ -65,13 +75,13 @@ public class Controller {
             e.printStackTrace();
         }
 
-        if (path != null) {
-            DocumentStructure documentStructure = parserService.parse(path);
-
-            indexerService.indexDocument(documentStructure);
-
-            return new ResponseEntity<>("added file", HttpStatus.OK);
-        }
+//        if (path != null) {
+//            DocumentStructure documentStructure = parserService.parse(path);
+//
+//            indexerService.indexDocument(documentStructure);
+//
+//            return new ResponseEntity<>("added file", HttpStatus.OK);
+//        }
 
         return new ResponseEntity<>("ERROR while adding", HttpStatus.INTERNAL_SERVER_ERROR);
     }

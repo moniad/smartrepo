@@ -30,3 +30,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Storage ###
+storage/*
+!storage/note.txt
+!storage/sample.txt
+!storage/sample.pdf
