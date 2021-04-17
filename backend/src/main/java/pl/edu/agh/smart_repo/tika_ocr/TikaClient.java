@@ -40,14 +40,7 @@ public class TikaClient {
         TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
         Map<String, Long> times = new HashMap<>();
 
-        LanguageDetector langDetector = new OptimaizeLangDetector().loadModels();
-        String pol = "Ala ma kota a Ola ma psa. Tak już w życiu bywa.";
-        String eng = "Frankly, I find that outrageous.";
-        String de = "Die Bücher des Frühjahrs";
-        System.out.println(pol+": "+langDetector.detect(pol).getLanguage());
-        System.out.println(eng+": "+langDetector.detect(eng).getLanguage());
-        System.out.println(de+": "+langDetector.detect(de).getLanguage());
-
+        languageDetectionTest();
 
         assert imgFileNames != null;
         for (String fileName : imgFileNames) {
@@ -137,5 +130,15 @@ public class TikaClient {
         }
         byte[] strToBytes = text.getBytes();
         Files.write(resultFilePath, strToBytes);
+    }
+
+    public static void languageDetectionTest(){
+        LanguageDetector langDetector = new OptimaizeLangDetector().loadModels();
+        String pol = "Ala ma kota a Ola ma psa. Tak już w życiu bywa.";
+        String eng = "Frankly, I find that outrageous.";
+        String de = "Die Bücher des Frühjahrs";
+        System.out.println(pol+": "+langDetector.detect(pol).getLanguage());
+        System.out.println(eng+": "+langDetector.detect(eng).getLanguage());
+        System.out.println(de+": "+langDetector.detect(de).getLanguage());
     }
 }
