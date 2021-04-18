@@ -34,5 +34,3 @@ build/
 ### Storage ###
 storage/*
 !storage/note.txt
-!storage/sample.txt
-!storage/sample.pdf
