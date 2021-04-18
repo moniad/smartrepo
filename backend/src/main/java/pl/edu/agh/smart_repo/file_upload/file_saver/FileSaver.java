@@ -1,8 +1,9 @@
-package pl.edu.agh.smart_repo.request_handler.uploader.file_saver;
+package pl.edu.agh.smart_repo.file_upload.file_saver;
 
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
 import pl.edu.agh.smart_repo.common.results.Result;
 import pl.edu.agh.smart_repo.common.results.ResultType;
 
@@ -13,40 +14,30 @@ import java.util.concurrent.Callable;
 
 @Slf4j
 public class FileSaver implements Callable<Result> {
-    private Logger logger = LoggerFactory.getLogger(FileSaver.class);
+    private Logger log = LoggerFactory.getLogger(FileSaver.class);
 
-    //TODO: This needs to be changed to a proper directory on server
     private Path targetFileLocation;
-    private File file;
+    private MultipartFile file;
 
-    public FileSaver(File file, Path targetFileLocation) {
+    public FileSaver(MultipartFile file, Path targetFileLocation) {
         this.file = file;
         this.targetFileLocation = targetFileLocation;
     }
 
     @Override
     public Result call() {
-        logger.info("Saving file {} to {}.", file.getName(), targetFileLocation);
-
-        FileInputStream fis;
-        byte[] buf = new byte[1024];
+        log.info("Saving file {} to {}.", file.getName(), targetFileLocation);
 
         try (FileOutputStream fos = new FileOutputStream(targetFileLocation.toString())) {
-            fis = new FileInputStream(this.file);
-
-            int hasRead = 0;
-            while ((hasRead = fis.read(buf)) > 0) {
-                fos.write(buf, 0, hasRead);
-            }
-
-            fis.close();
+            fos.write(file.getBytes());
         } catch (IOException e) {
-            logger.error("Error occured while saving file {} to {} location. Messege: {}",
+            log.error("Error occurred while saving file {} to {} location. Messege: {}",
                     file.getName(), targetFileLocation, e.getMessage());
 
             return new Result(ResultType.FAILURE, e);
         }
 
+        log.info("Successfully saved file {}.", file.getName());
         return new Result(ResultType.SUCCESS);
     }
 }
