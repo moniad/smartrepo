@@ -1,9 +1,9 @@
-package pl.edu.agh.smart_repo.translation.translators;
+package pl.edu.agh.smart_repo.services.translation.translators;
 
 import com.google.common.net.UrlEscapers;
 import com.google.gson.Gson;
-import pl.edu.agh.smart_repo.translation.Language;
-import pl.edu.agh.smart_repo.translation.Translator;
+import pl.edu.agh.smart_repo.services.translation.Language;
+import pl.edu.agh.smart_repo.services.translation.Translator;
 
 import java.io.IOException;
 import java.io.InputStreamReader;

@@ -1,19 +1,15 @@
-package pl.edu.agh.smart_repo.service;
+package pl.edu.agh.smart_repo.services.search;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import pl.edu.agh.smart_repo.common.document_fields.DocumentFields;
-import pl.edu.agh.smart_repo.indexer.IndexerService;
-import pl.edu.agh.smart_repo.translation.Language;
-import pl.edu.agh.smart_repo.translation.TranslationService;
+import pl.edu.agh.smart_repo.services.translation.Language;
+import pl.edu.agh.smart_repo.services.translation.TranslationService;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
 public class SearchService {
-
-    @Autowired
-    IndexerService indexerService;
 
     @Autowired
     TranslationService translationService;
@@ -24,6 +20,7 @@ public class SearchService {
         String translatedText = translationService.translate(phrase, Language.POLISH, Language.SPANISH);
         System.out.println("translated text: " + translatedText);
 
-        return indexerService.search(DocumentFields.CONTENTS, phrase);
+        System.out.println("(TODO) search not implemented");
+        return Collections.singletonList("not implemented");
     }
 }

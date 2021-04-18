@@ -1,31 +1,8 @@
 version: "3.7"
 
 services:
-  pdf_tika:
-    build:
-      context: ../parsers/pdf_tika
-      args:
-        - RABBITMQ_HOST=${RABBITMQ_HOST}
-    restart: unless-stopped
-    networks:
-      rabbit-network:
-    volumes:
-      - ../storage:/storage
-    depends_on:
-      - rabbitmq
-  txt_tika:
-    build:
-      context: ../parsers/txt_tika
-      args:
-        - RABBITMQ_HOST=${RABBITMQ_HOST}
-    restart: unless-stopped
-    networks:
-      rabbit-network:
-    volumes:
-      - ../storage:/storage
-    depends_on:
-      - rabbitmq
-  rabbitmq:
+  smart-repo-rabbitmq:
+    container_name: smart-repo-rabbitmq
     image: rabbitmq:3-management
     restart: unless-stopped
     ports:
@@ -36,5 +13,60 @@ services:
         aliases:
           - ${RABBITMQ_HOST}
 
+  smart-repo-backend:
+    container_name: smart-repo-backend
+    build:
+      context: ../backend
+      args:
+        - RABBITMQ_HOST=${RABBITMQ_HOST}
+    image: smart-repo-backend:latest
+    ports:
+      - 7777:7777
+    networks:
+      rabbit-network:
+    volumes:
+      - ../storage:/storage
+    depends_on:
+      - smart-repo-rabbitmq
+
+  smart-repo-gui:
+    container_name: smart-repo-gui
+    build:
+      context: ../frontend/smart-repo-gui
+    image: smart-repo-gui:latest
+    ports:
+      - 8080:8080
+    networks:
+      smart-repo-network:
+
+  smart-repo-pdf-tika:
+    build:
+      context: ../parsers/pdf_tika
+      args:
+        - RABBITMQ_HOST=${RABBITMQ_HOST}
+    image: smart-repo-pdf-tika:latest
+    restart: unless-stopped
+    networks:
+      rabbit-network:
+    volumes:
+      - ../storage:/storage
+    depends_on:
+      - smart-repo-rabbitmq
+
+  smart-repo-txt-tika:
+    build:
+      context: ../parsers/txt_tika
+      args:
+        - RABBITMQ_HOST=${RABBITMQ_HOST}
+    image: smart-repo-txt-tika:latest
+    restart: unless-stopped
+    networks:
+      rabbit-network:
+    volumes:
+      - ../storage:/storage
+    depends_on:
+      - smart-repo-rabbitmq
+
 networks:
   rabbit-network:
+  smart-repo-network:

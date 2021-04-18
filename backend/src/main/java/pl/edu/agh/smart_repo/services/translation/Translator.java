@@ -1,4 +1,4 @@
-package pl.edu.agh.smart_repo.translation;
+package pl.edu.agh.smart_repo.services.translation;
 
 
 public interface Translator {

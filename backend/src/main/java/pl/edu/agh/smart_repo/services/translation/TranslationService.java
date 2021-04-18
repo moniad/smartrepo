@@ -1,7 +1,7 @@
-package pl.edu.agh.smart_repo.translation;
+package pl.edu.agh.smart_repo.services.translation;
 
 import org.springframework.stereotype.Service;
-import pl.edu.agh.smart_repo.ConfigurationFactory;
+import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
 
 @Service
 public class TranslationService {
