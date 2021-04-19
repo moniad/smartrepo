@@ -22,12 +22,14 @@ public class FileTreeFetcherService {
         this.userFilesDirectoryPath = configurationFactory.getStoragePath();
     }
 
-    public List<File> fetchFileTree(String directoryPath, boolean recursive, String[] extensions){
+    public List<File> fetchFileTree(String directoryPath, boolean recursive, String[] extensions) {
         String resultPath = Paths.get(userFilesDirectoryPath.toString(), directoryPath).toString();
         File currentDirectory = new File(resultPath);
+
         List<File> files = (List<File>) FileUtils.listFiles(currentDirectory, extensions, recursive);
         File[] directories = Optional.ofNullable(currentDirectory.listFiles((FileFilter) FileFilterUtils.directoryFileFilter())).orElse(new File[0]);
         files.addAll(Arrays.asList(directories));
+
         return files;
     }
 }

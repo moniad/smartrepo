@@ -1,4 +1,4 @@
-package pl.edu.agh.smart_repo.services.file;
+package pl.edu.agh.smart_repo.services.parse;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
@@ -16,7 +16,7 @@ import java.io.InputStream;
 
 @Slf4j
 @Service
-public class FileService {
+public class FileExtensionService {
 
     private TikaConfig config = TikaConfig.getDefaultConfig();
 
@@ -39,7 +39,7 @@ public class FileService {
             extension = mimeType.getExtension().split("\\.")[1];
 
         } catch (FileNotFoundException e){
-            log.error("Couldn`t find file: " + file.getName());
+            log.error("Cannot find file: " + file.getName());
         }
         catch (Exception e) {
             log.error("Cannot get file extension. File: {}", file.getName());

@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pl.edu.agh.smart_repo.common.file.AcceptableFileExtensions;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
-import pl.edu.agh.smart_repo.services.file.FileService;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,10 +17,9 @@ public class ParserService {
     Channel channel;
 
     @Autowired
-    FileService fileService;
+    FileExtensionService fileExtensionService;
 
-    public ParserService(ConfigurationFactory configurationFactory) throws Exception
-    {
+    public ParserService(ConfigurationFactory configurationFactory) throws Exception {
         // RabbitMQ settings
         int port = 5672;
         ConnectionFactory factory = new ConnectionFactory();
@@ -30,13 +28,12 @@ public class ParserService {
         Connection connection = retryConnection(factory);
         channel = connection.createChannel();
 
-        for (AcceptableFileExtensions extension: AcceptableFileExtensions.values())
+        for (AcceptableFileExtensions extension : AcceptableFileExtensions.values())
             channel.queueDeclare(extension.toString(), false, false, false, null);
         // END: RabbitMQ setting
     }
 
-    public String parse(File file, String path_relative_to_storage)
-    {
+    public String parse(File file, String path_relative_to_storage) {
         try {
             String reply_to = channel.queueDeclare().getQueue();
 
@@ -45,9 +42,8 @@ public class ParserService {
                     .replyTo(reply_to)
                     .build();
 
-            String extension = fileService.getExtension(file);
-            if (extension == null)
-            {
+            String extension = fileExtensionService.getExtension(file);
+            if (extension == null) {
                 log.error("Error while checking file extension.");
                 return null;
             }
@@ -56,7 +52,7 @@ public class ParserService {
 
             GetResponse response = null;
             while (response == null)
-                response= channel.basicGet(reply_to, true);
+                response = channel.basicGet(reply_to, true);
 
             channel.queueDelete(reply_to);
 
@@ -68,8 +64,7 @@ public class ParserService {
         }
     }
 
-    private static Connection retryConnection(ConnectionFactory factory) throws Exception
-    {
+    private static Connection retryConnection(ConnectionFactory factory) throws Exception {
         int connectionTrials = 5;
         int waitTime = 5000;
         for (int retry = 0; retry <= connectionTrials; ++retry) {
