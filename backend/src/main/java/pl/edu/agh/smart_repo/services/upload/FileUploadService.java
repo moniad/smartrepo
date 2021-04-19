@@ -25,8 +25,7 @@ public class FileUploadService {
     @Autowired
     ParserService parserService;
 
-    public FileUploadService(ConfigurationFactory configurationFactory)
-    {
+    public FileUploadService(ConfigurationFactory configurationFactory) {
         storagePath = configurationFactory.getStoragePath();
     }
 
@@ -39,27 +38,25 @@ public class FileUploadService {
 
         File new_file = new File(filePath.toUri());
 
-        try (FileOutputStream fos = new FileOutputStream(new_file)){
+        try (FileOutputStream fos = new FileOutputStream(new_file)) {
             fos.write(file.getBytes());
-        } catch (FileNotFoundException e)
-        {
-            log.error("file couldn`t be created");
+        } catch (FileNotFoundException e) {
+            log.error("Error: file cannot be created.");
             return new Result(ResultType.FAILURE, e);
-        }
-        catch (IOException e) {
-            log.error("error while saving file");
+        } catch (IOException e) {
+            log.error("Error while saving file.");
             return new Result(ResultType.FAILURE, e);
         }
 
         String parsed = parserService.parse(new_file, path_relative_to_storage);
-        if (parsed == null)
-        {
-            return new Result(ResultType.FAILURE, "failed to parse file");
+        if (parsed == null) {
+            return new Result(ResultType.FAILURE, "Failed to parse file.");
         }
 
-        log.info("received parse response: '" + parsed + "'");
+        log.info("Received parse response: '" + parsed + "'");
 
         //TODO send to indexing service there...
+
         return new Result(ResultType.SUCCESS);
     }
 }

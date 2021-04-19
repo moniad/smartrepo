@@ -6,10 +6,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import pl.edu.agh.smart_repo.common.results.Result;
-import pl.edu.agh.smart_repo.services.file.FileService;
+import pl.edu.agh.smart_repo.services.directory_tree.FileTreeFetcherService;
 import pl.edu.agh.smart_repo.services.upload.FileUploadService;
 import pl.edu.agh.smart_repo.services.search.SearchService;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -21,7 +22,8 @@ public class RequestController {
     @Autowired
     FileUploadService fileUploadService;
     @Autowired
-    FileService fileService;
+    FileTreeFetcherService fileTreeFetcherService;
+
 
     @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
     @ResponseBody
@@ -45,5 +47,13 @@ public class RequestController {
         System.out.println("SEARCH for: " + phrase);
         List<String> documentsContainingPhraseNames = searchService.searchDocuments(phrase);
         return new ResponseEntity<>(documentsContainingPhraseNames, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/files")
+    @ResponseBody
+    public ResponseEntity<List<File>> getFiles(@RequestParam("path") String path) throws IOException {
+        var files = fileTreeFetcherService.fetchFileTree(path, false, null);
+
+        return new ResponseEntity<>(files, HttpStatus.OK);
     }
 }

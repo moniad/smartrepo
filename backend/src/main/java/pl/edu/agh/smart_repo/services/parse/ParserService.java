@@ -22,7 +22,7 @@ public class ParserService {
 
     public ParserService(ConfigurationFactory configurationFactory) throws Exception
     {
-        //RabbitMQ settings
+        // RabbitMQ settings
         int port = 5672;
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(configurationFactory.getRabbitHost());
@@ -32,7 +32,7 @@ public class ParserService {
 
         for (AcceptableFileExtensions extension: AcceptableFileExtensions.values())
             channel.queueDeclare(extension.toString(), false, false, false, null);
-        //END: RabbitMQ setting
+        // END: RabbitMQ setting
     }
 
     public String parse(File file, String path_relative_to_storage)
@@ -48,7 +48,7 @@ public class ParserService {
             String extension = fileService.getExtension(file);
             if (extension == null)
             {
-                log.error("error while checking file extension");
+                log.error("Error while checking file extension.");
                 return null;
             }
 
@@ -63,7 +63,7 @@ public class ParserService {
             return new String(response.getBody(), StandardCharsets.UTF_8);
 
         } catch (IOException e) {
-            log.error("error while sending file to parse queues");
+            log.error("Error while sending file to parse queues.");
             return null;
         }
     }
@@ -80,8 +80,8 @@ public class ParserService {
                 log.info("Unable to establish connection to RabbitMQ. Trial: " + retry);
             }
         }
-        log.info("Unable to establish connection");
-        throw new IllegalStateException("No RabbitMQConnection provided");
+        log.info("Unable to establish connection.");
+        throw new IllegalStateException("No RabbitMQConnection provided.");
     }
 
 }
