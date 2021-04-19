@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "VoskAudioParser": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}
