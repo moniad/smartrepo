@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
 import pl.edu.agh.smart_repo.common.results.Result;
 import pl.edu.agh.smart_repo.common.results.ResultType;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import pl.edu.agh.smart_repo.services.index.IndexerService;
 import pl.edu.agh.smart_repo.services.parse.ParserService;
 
 @Slf4j
@@ -24,6 +26,8 @@ public class FileUploadService {
 
     @Autowired
     ParserService parserService;
+    @Autowired
+    IndexerService indexerService;
 
     public FileUploadService(ConfigurationFactory configurationFactory) {
         storagePath = configurationFactory.getStoragePath();
@@ -55,8 +59,11 @@ public class FileUploadService {
 
         log.info("Received parse response: '" + parsed + "'");
 
-        //TODO send to indexing service there...
+        DocumentStructure documentStructure = new DocumentStructure();
 
-        return new Result(ResultType.SUCCESS);
+        documentStructure.setName(path_relative_to_storage);
+        documentStructure.setContents(parsed.replaceAll("\n", " ").trim());
+
+        return indexerService.indexDocument(documentStructure);
     }
 }

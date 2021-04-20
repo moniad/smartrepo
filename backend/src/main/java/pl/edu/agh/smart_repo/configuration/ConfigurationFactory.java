@@ -3,9 +3,6 @@ package pl.edu.agh.smart_repo.configuration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.stereotype.Service;
-import pl.edu.agh.smart_repo.common.document_fields.DocumentFields;
-import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
-import pl.edu.agh.smart_repo.services.index.Indexer;
 import pl.edu.agh.smart_repo.services.translation.Translator;
 import pl.edu.agh.smart_repo.services.translation.translators.MyMemoryTranslator;
 
@@ -19,7 +16,8 @@ public class ConfigurationFactory {
     @Autowired
     ApplicationArguments appArgs;
 
-    private final static Path storagePath = Paths.get("/storage");
+    private final Path storagePath = Paths.get("/storage");
+    private final String index = "myindex";
 
     public String getRabbitHost()
     {
@@ -33,8 +31,27 @@ public class ConfigurationFactory {
             host = "localhost";
         }
 
-        System.out.println("return host: " + host);
         return host;
+    }
+
+    public String getElasticSearchHost()
+    {
+        String host;
+        List<String> args = appArgs.getNonOptionArgs();
+
+        if (args.size() > 1) {
+            host = args.get(1);
+        }
+        else {
+            host = "localhost";
+        }
+
+        return host;
+    }
+
+    public String getIndex()
+    {
+        return index;
     }
 
     public Translator getTranslator() { return new MyMemoryTranslator(); }

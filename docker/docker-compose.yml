@@ -13,21 +13,52 @@ services:
         aliases:
           - ${RABBITMQ_HOST}
 
+  elasticsearch:
+    container_name: smart-repo-elastic
+    image: elasticsearch:7.6.0
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      discovery.type: single-node
+      xpack.license.self_generated.type: trial
+    logging:
+      driver: none
+    networks:
+      elk:
+
+  kibana:
+    container_name: smart-repo-kibana
+    image: kibana:7.6.0
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+    environment:
+      SERVER_NAME: kibana
+    logging:
+      driver: none
+    networks:
+      elk:
+
   smart-repo-backend:
     container_name: smart-repo-backend
     build:
       context: ../backend
       args:
         - RABBITMQ_HOST=${RABBITMQ_HOST}
+        - ELASTICSEARCH_HOSTS=${ELASTICSEARCH_HOSTS}
     image: smart-repo-backend:latest
     ports:
       - 7777:7777
     networks:
       rabbit-network:
+      elk:
     volumes:
       - ../storage:/storage
     depends_on:
       - smart-repo-rabbitmq
+      - elasticsearch
 
   smart-repo-gui:
     container_name: smart-repo-gui
@@ -70,3 +101,5 @@ services:
 networks:
   rabbit-network:
   smart-repo-network:
+  elk:
+    driver: bridge

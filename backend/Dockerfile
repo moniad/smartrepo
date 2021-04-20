@@ -6,9 +6,12 @@ RUN mvn -f /usr/src/app/pom.xml clean package
 FROM adoptopenjdk/openjdk11:alpine-jre
 
 ARG RABBITMQ_HOST
-ENV HOST=$RABBITMQ_HOST
+ENV RABBITMQ_HOST=$RABBITMQ_HOST
+
+ARG ELASTICSEARCH_HOSTS
+ENV ELASTICSEARCH_HOSTS=$ELASTICSEARCH_HOSTS
 
 COPY --from=build /usr/src/app/target/backend-0.0.1-SNAPSHOT.jar /usr/app/backend-0.0.1-SNAPSHOT.jar
 EXPOSE 7777
 
-ENTRYPOINT java -jar /usr/app/backend-0.0.1-SNAPSHOT.jar $HOST docker
+ENTRYPOINT java -jar /usr/app/backend-0.0.1-SNAPSHOT.jar $RABBITMQ_HOST $ELASTICSEARCH_HOSTS
