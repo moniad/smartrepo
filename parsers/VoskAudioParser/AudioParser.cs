@@ -8,45 +8,11 @@ using Vosk;
 
 namespace VoskAudioParser
 {
-    class AudioParser
+    public class AudioParser
     {
         private static readonly ILog log = LogManager.GetLogger(typeof(AudioParser));
 
-        private readonly TextExtractor extractor = new();
-
-        public List<string> ParseWaveFile(String path, Model model)
-        {
-            var tmpFile = Option.None<string>();
-
-            using (var reader = new WaveFileReader(path))
-            {
-
-                int sampleRate = reader.WaveFormat.SampleRate;
-                int channelsNumer = reader.WaveFormat.Channels;
-
-                if (sampleRate < FormatRequirements.minSamplingRate || channelsNumer > FormatRequirements.maxChannelsNumber)
-                {
-                    var outFile = CreateTempFile(path);
-                    var outFormat = new WaveFormat(Math.Max(sampleRate, FormatRequirements.minSamplingRate),
-                        FormatRequirements.bitsPerSample,
-                        Math.Min(channelsNumer, FormatRequirements.maxChannelsNumber));
-                    using var resampler = new MediaFoundationResampler(reader, outFormat);
-                    WaveFileWriter.CreateWaveFile(outFile, resampler);
-
-                    path = outFile;
-                    tmpFile = Option.Some(outFile);
-                }
-            }
-
-            var results = extractor.ExtractFromWaveFile(path, model);
-
-            foreach (var filePath in tmpFile)
-            {
-                DeleteFile(filePath);
-            }
-
-            return results;
-        }
+        private readonly TextExtractor Extractor = new();
 
         public List<string> ParseAudioFile(String path, Model model)
         {
@@ -59,14 +25,14 @@ namespace VoskAudioParser
                 int channelsNumer = reader.WaveFormat.Channels;
 
                 outFile = CreateTempFile(path);
-                var outFormat = new WaveFormat(Math.Max(sampleRate, FormatRequirements.minSamplingRate),
-                    FormatRequirements.bitsPerSample,
-                    Math.Min(channelsNumer, FormatRequirements.maxChannelsNumber));
+                var outFormat = new WaveFormat(Math.Max(sampleRate, FormatRequirements.MinSamplingRate),
+                    FormatRequirements.BitsPerSample,
+                    Math.Min(channelsNumer, FormatRequirements.MaxChannelsNumber));
                 using var resampler = new MediaFoundationResampler(reader, outFormat);
                 WaveFileWriter.CreateWaveFile(outFile, reader);
             }
 
-            var results = extractor.ExtractFromWaveFile(outFile, model);
+            var results = Extractor.ExtractFromWaveFile(outFile, model);
 
             DeleteFile(outFile);
 

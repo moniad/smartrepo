@@ -3,9 +3,9 @@ using System;
 
 namespace VoskAudioParser
 {
-    class Program
+    public class Program
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(Program));
+        private static readonly ILog Log = LogManager.GetLogger(typeof(Program));
 
         static void Main(string[] args)
         {
@@ -22,17 +22,16 @@ namespace VoskAudioParser
                 some: model => {
                     var parser = new AudioParser();
                     try {
-                        var results = parser.ParseAudioFile(path, model);  // or var results = parser.ParseWaveFile(path, model);
-                        log.Info(results);
+                        var results = parser.ParseAudioFile(path, model);
+                        Log.Info(results);
                     }
                     catch (Exception e)
                     {
-                        log.Error(e.Message);
+                        Log.Error(e.Message);
                     }
                     
                 },
-                none: () => log.Error($"Failed to load a model for language: {language}")
-                
+                none: () => Log.Error($"Failed to load a model for language: {language}")
             );
 
         }

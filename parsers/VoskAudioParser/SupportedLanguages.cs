@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace VoskAudioParser
 {
-    enum SupportedLanguages
+    public enum SupportedLanguages
     {
         EN,
         CN,

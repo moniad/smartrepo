@@ -8,50 +8,46 @@ using System.IO;
 
 namespace VoskAudioParser
 {
-    class ModelsManager
+    public class ModelsManager
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(ModelsManager));
+        private static readonly ILog Log = LogManager.GetLogger(typeof(ModelsManager));
 
-        //private static String baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "models");
+        // use the absolute path to the Models directory
+        private static String BaseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "models");
 
-        // use the absolute path to the models directory
-        private static String baseDirectory = @"";
+        private Dictionary<SupportedLanguages, Model> Models = new();
 
-        private readonly Dictionary<SupportedLanguages, String> paths = new()
+        private readonly Dictionary<SupportedLanguages, String> Paths = new()
         {
-            { SupportedLanguages.CA, Path.Combine(baseDirectory, "model_ca") },
-            { SupportedLanguages.CN, Path.Combine(baseDirectory, "model_cn") },
-            { SupportedLanguages.DE, Path.Combine(baseDirectory, "model_de") },
-            { SupportedLanguages.EN, Path.Combine(baseDirectory, "model_en") },
-            { SupportedLanguages.ES, Path.Combine(baseDirectory, "model_es") },
-            { SupportedLanguages.FA, Path.Combine(baseDirectory, "model_fa") },
-            { SupportedLanguages.FR, Path.Combine(baseDirectory, "model_fr") },
-            { SupportedLanguages.IT, Path.Combine(baseDirectory, "model_it") },
-            { SupportedLanguages.PT, Path.Combine(baseDirectory, "model_pt") },
-            { SupportedLanguages.RU, Path.Combine(baseDirectory, "model_ru") },
-            { SupportedLanguages.TR, Path.Combine(baseDirectory, "model_tr") },
-            { SupportedLanguages.VN, Path.Combine(baseDirectory, "model_vn") }
+            { SupportedLanguages.CA, Path.Combine(BaseDirectory, "model_ca") },
+            { SupportedLanguages.CN, Path.Combine(BaseDirectory, "model_cn") },
+            { SupportedLanguages.DE, Path.Combine(BaseDirectory, "model_de") },
+            { SupportedLanguages.EN, Path.Combine(BaseDirectory, "model_en") },
+            { SupportedLanguages.ES, Path.Combine(BaseDirectory, "model_es") },
+            { SupportedLanguages.FA, Path.Combine(BaseDirectory, "model_fa") },
+            { SupportedLanguages.FR, Path.Combine(BaseDirectory, "model_fr") },
+            { SupportedLanguages.IT, Path.Combine(BaseDirectory, "model_it") },
+            { SupportedLanguages.PT, Path.Combine(BaseDirectory, "model_pt") },
+            { SupportedLanguages.RU, Path.Combine(BaseDirectory, "model_ru") },
+            { SupportedLanguages.TR, Path.Combine(BaseDirectory, "model_tr") },
+            { SupportedLanguages.VN, Path.Combine(BaseDirectory, "model_vn") }
         };
-
-        private Dictionary<SupportedLanguages, Model> models = new();
-
 
         public Option<Model> GetModel(SupportedLanguages language)
         {
-            if (models.TryGetValue(language, out Model model))
+            if (Models.TryGetValue(language, out Model model))
             {
                 return Option.Some(model);
             }
             else
             {
-                var newModel = paths.GetValueOrNone(language).Map(p => {
+                var newModel = Paths.GetValueOrNone(language).Map(p => {
                     var model = new Model(p);
-                    models.Add(language, model);
+                    Models.Add(language, model);
                     return model;
                 });
                 return newModel;
             }
         }
-
     }
 }

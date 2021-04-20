@@ -8,13 +8,13 @@ using Vosk;
 
 namespace VoskAudioParser
 {
-    class TextExtractor
+    public class TextExtractor
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(TextExtractor));
+        private static readonly ILog Log = LogManager.GetLogger(typeof(TextExtractor));
 
         public List<string> ExtractFromWaveFile(string path, Model model)
         {
-            log.Info($"Processing file {path}");
+            Log.Info($"Processing file {path}");
             var results = new List<String>();
             var partialResults = new List<String>();
 
@@ -23,7 +23,7 @@ namespace VoskAudioParser
 
                 if (!ProperFormat(reader.WaveFormat))
                 {
-                    log.Info($"Wrong format - Cannot extract data from file {path}");
+                    Log.Info($"Wrong format - Cannot extract data from file {path}");
                     return results;
                 }
 
@@ -44,18 +44,15 @@ namespace VoskAudioParser
                 AddResult(rec.FinalResult(), results, "text");
             }
 
-            if (results.Any())
-                return results;
-            else
-                return partialResults;
+            return results.Any() ? results : partialResults;
         }
 
         private bool ProperFormat(WaveFormat waveFormat)
         {
-            return waveFormat.SampleRate >= FormatRequirements.minSamplingRate
-                & waveFormat.Channels == FormatRequirements.maxChannelsNumber
-                & waveFormat.BitsPerSample == FormatRequirements.bitsPerSample
-                & waveFormat.Encoding.Equals(FormatRequirements.encoding);
+            return waveFormat.SampleRate >= FormatRequirements.MinSamplingRate
+                & waveFormat.Channels == FormatRequirements.MaxChannelsNumber
+                & waveFormat.BitsPerSample == FormatRequirements.BitsPerSample
+                & waveFormat.Encoding.Equals(FormatRequirements.Encoding);
         }
 
         private void AddResult(string fullResult, List<string> results, string property)
@@ -63,8 +60,8 @@ namespace VoskAudioParser
             using var doc = JsonDocument.Parse(fullResult);
             string res = doc.RootElement.GetProperty(property).GetString();
 
-            if (!res.Equals("")) results.Add(res);
+            if (res != "")
+                results.Add(res);
         }
-
     }
 }

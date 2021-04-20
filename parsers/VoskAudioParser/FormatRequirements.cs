@@ -7,16 +7,14 @@ using System.Threading.Tasks;
 
 namespace VoskAudioParser
 {
-    static class FormatRequirements
+    public static class FormatRequirements
     {
+        public static int MinSamplingRate = 16000;
 
-        public static int minSamplingRate = 16000;
+        public static int MaxChannelsNumber = 1;
 
-        public static int maxChannelsNumber = 1;
+        public static int BitsPerSample = 16;
 
-        public static int bitsPerSample = 16;
-
-        public static WaveFormatEncoding encoding = WaveFormatEncoding.Pcm;
-
+        public static WaveFormatEncoding Encoding = WaveFormatEncoding.Pcm;
     }
 }
