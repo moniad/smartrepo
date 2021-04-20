@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
+import pl.edu.agh.smart_repo.common.json.EscapeCharMapper;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
 import pl.edu.agh.smart_repo.common.results.Result;
 import pl.edu.agh.smart_repo.common.results.ResultType;
@@ -23,6 +24,7 @@ import pl.edu.agh.smart_repo.services.parse.ParserService;
 @Service
 public class FileUploadService {
     private final Path storagePath;
+    private final EscapeCharMapper escapeCharMapper;
 
     @Autowired
     ParserService parserService;
@@ -31,6 +33,7 @@ public class FileUploadService {
 
     public FileUploadService(ConfigurationFactory configurationFactory) {
         storagePath = configurationFactory.getStoragePath();
+        escapeCharMapper = new EscapeCharMapper();
     }
 
     public Result processFile(MultipartFile file) {
@@ -53,16 +56,18 @@ public class FileUploadService {
         }
 
         String parsed = parserService.parse(new_file, path_relative_to_storage);
+
         if (parsed == null) {
             return new Result(ResultType.FAILURE, "Failed to parse file.");
         }
 
-        log.info("Received parse response: '" + parsed + "'");
+        parsed = escapeCharMapper.mapAll(parsed).trim();
 
         DocumentStructure documentStructure = new DocumentStructure();
 
+        //TODO retrieve remaining arguments from frontend`s request
         documentStructure.setName(path_relative_to_storage);
-        documentStructure.setContents(parsed.replaceAll("\n", " ").trim());
+        documentStructure.setContents(parsed);
 
         return indexerService.indexDocument(documentStructure);
     }

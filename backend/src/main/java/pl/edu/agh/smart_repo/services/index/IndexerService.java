@@ -22,8 +22,8 @@ import java.util.List;
 @Service
 public class IndexerService {
 
-    String index;
-    HttpClient client;
+    private final String index;
+    private final HttpClient client;
 
     @Autowired
     public IndexerService(ConfigurationFactory configurationFactory) {
@@ -32,7 +32,7 @@ public class IndexerService {
         client = HttpClient.newHttpClient();
         index = configurationFactory.getElasticSearchHost() + "/" + configurationFactory.getIndex();
 
-
+        //TODO move to cfg?
         int number_of_shards = 2;
         int number_of_replicas = 2;
 
@@ -111,7 +111,9 @@ public class IndexerService {
                 .build();
 
         try {
-            client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            log.info("Index response: " + response);
+            log.info("Response body: " + response.body());
         } catch (ConnectException e) {
             log.error("Error while indexing document (document already exist)");
             return new Result(ResultType.FAILURE);
