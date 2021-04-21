@@ -2,6 +2,7 @@ package pl.edu.agh.smart_repo.services.index;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentFields;
@@ -26,24 +27,22 @@ public class IndexerService {
     private final HttpClient client;
 
     @Autowired
-    public IndexerService(ConfigurationFactory configurationFactory) {
+    public IndexerService(ConfigurationFactory configurationFactory,
+                          @Value("${elastic.index.number_of_shards}") int number_of_shards,
+                          @Value("${elastic.index.number_of_replicas}") int number_of_replicas) {
         log.info("Init indexer service");
 
         client = HttpClient.newHttpClient();
-        index = configurationFactory.getElasticSearchHost() + "/" + configurationFactory.getIndex();
+        index = configurationFactory.getElasticSearchAddress() + "/" + configurationFactory.getIndex();
 
-        //TODO move to cfg?
-        int number_of_shards = 2;
-        int number_of_replicas = 2;
-
-        String json = String.format("{\"settings\":{\"number_of_shards\":%d,\"number_of_replicas\":%d}}",
+        String requestBody = String.format("{\"settings\":{\"number_of_shards\":%d,\"number_of_replicas\":%d}}",
                 number_of_shards, number_of_replicas);
 
-        log.info("Send init index: '" + json + "'");
+        log.info("Send init index: '" + requestBody + "', address: " + index);
 
         HttpRequest request = HttpRequest.newBuilder(URI.create(index))
                 .header("Content-Type", "application/json")
-                .PUT(HttpRequest.BodyPublishers.ofString(json))
+                .PUT(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
         try {
@@ -55,23 +54,23 @@ public class IndexerService {
         }
 
 
-        json = "{\n" +
+        requestBody = "{\n" +
                 "  \"properties\" : {\n" +
                 "      \"name\" : { \"type\" : \"text\" },\n" +
                 "      \"path\" : { \"type\" : \"text\" },\n" +
                 "      \"contents\" : { \"type\" : \"text\" },\n" +
                 "      \"keywords\" : { \"type\" : \"text\" },\n" +
-                "      \"create_date\" : { \"type\" : \"text\" },\n" +
+                "      \"creation_date\" : { \"type\" : \"text\" },\n" +
                 "      \"modification_date\" : { \"type\" : \"text\" },\n" +
                 "      \"language\" : { \"type\" : \"text\" }\n" +
                 "  }\n" +
                 "}";
 
-        log.info("Send init index mapping: '" + json + "'");
+        log.info("Send init index mapping: '" + requestBody + "'");
 
         request = HttpRequest.newBuilder(URI.create(index + "/" + "_mapping"))
                 .header("Content-Type", "application/json")
-                .PUT(HttpRequest.BodyPublishers.ofString(json))
+                .PUT(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
         try {
@@ -86,7 +85,7 @@ public class IndexerService {
 
     public Result indexDocument(DocumentStructure documentStructure) {
 
-        String json = String.format("{\n" +
+        String requestBody = String.format("{\n" +
                         "  \"name\": \"%s\",\n" +
                         "  \"path\": \"%s\",\n" +
                         "  \"contents\": \"%s\",\n" +
@@ -95,19 +94,19 @@ public class IndexerService {
                         "  \"modification_date\": \"%s\",\n" +
                         "  \"language\": \"%s\"\n" +
                         "}",
-                documentStructure.getByName(DocumentFields.NAME),
-                documentStructure.getByName(DocumentFields.PATH),
-                documentStructure.getByName(DocumentFields.CONTENTS),
-                documentStructure.getByName(DocumentFields.KEYWORDS),
-                documentStructure.getByName(DocumentFields.CREATE_DATE),
-                documentStructure.getByName(DocumentFields.MODIFICATION_DATE),
-                documentStructure.getByName(DocumentFields.LANGUAGE));
+                documentStructure.getByDocumentField(DocumentFields.NAME),
+                documentStructure.getByDocumentField(DocumentFields.PATH),
+                documentStructure.getByDocumentField(DocumentFields.CONTENTS),
+                documentStructure.getByDocumentField(DocumentFields.KEYWORDS),
+                documentStructure.getByDocumentField(DocumentFields.CREATION_DATE),
+                documentStructure.getByDocumentField(DocumentFields.MODIFICATION_DATE),
+                documentStructure.getByDocumentField(DocumentFields.LANGUAGE));
 
-        log.info("Send index document: '" + json + "'");
+        log.info("Send index document: '" + requestBody + "'");
 
         HttpRequest request = HttpRequest.newBuilder(URI.create(index + "/" + "_doc"))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
         try {

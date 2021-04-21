@@ -9,11 +9,11 @@ public class DocumentStructure {
     private String path;
     private String contents;
     private String keywords;
-    private String createDate;
+    private String creationDate;
     private String modificationDate;
     private String language;
 
-    public void setByName(DocumentFields documentField, String val) {
+    public void setByDocumentField(DocumentFields documentField, String val) {
         switch (documentField) {
             case NAME:
                 this.name = val;
@@ -27,8 +27,8 @@ public class DocumentStructure {
             case KEYWORDS:
                 this.keywords = val;
                 break;
-            case CREATE_DATE:
-                this.createDate = val;
+            case CREATION_DATE:
+                this.creationDate = val;
                 break;
             case MODIFICATION_DATE:
                 this.modificationDate = val;
@@ -39,7 +39,7 @@ public class DocumentStructure {
         }
     }
 
-    public String getByName(DocumentFields documentField) {
+    public String getByDocumentField(DocumentFields documentField) {
         switch (documentField) {
             case NAME:
                 return this.name;
@@ -49,8 +49,8 @@ public class DocumentStructure {
                 return this.contents;
             case KEYWORDS:
                 return this.keywords;
-            case CREATE_DATE:
-                return this.createDate;
+            case CREATION_DATE:
+                return this.creationDate;
             case MODIFICATION_DATE:
                 return this.modificationDate;
             case LANGUAGE:

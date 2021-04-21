@@ -58,7 +58,7 @@ services:
       context: ../backend
       args:
         - RABBITMQ_HOST=${RABBITMQ_HOST}
-        - ELASTICSEARCH_HOSTS=${ELASTICSEARCH_HOSTS}
+        - ELASTICSEARCH_ADDRESS=${ELASTICSEARCH_ADDRESS}
     image: smart-repo-backend:latest
     ports:
       - 7777:7777

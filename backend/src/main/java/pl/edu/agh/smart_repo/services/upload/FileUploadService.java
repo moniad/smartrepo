@@ -31,6 +31,7 @@ public class FileUploadService {
     @Autowired
     IndexerService indexerService;
 
+    @Autowired
     public FileUploadService(ConfigurationFactory configurationFactory) {
         storagePath = configurationFactory.getStoragePath();
         escapeCharMapper = new EscapeCharMapper();

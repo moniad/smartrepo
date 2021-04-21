@@ -5,7 +5,7 @@ public enum DocumentFields {
     PATH("path"),
     CONTENTS("contents"),
     KEYWORDS("keywords"),
-    CREATE_DATE("create_date"),
+    CREATION_DATE("creation_date"),
     MODIFICATION_DATE("modification_date"),
     LANGUAGE("language");
 
