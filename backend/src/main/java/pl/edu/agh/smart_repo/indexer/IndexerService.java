@@ -16,7 +16,6 @@ public class IndexerService {
     @Autowired
     public IndexerService(ConfigurationFactory configurationFactory)
     {
-        this.indexer = configurationFactory.getIndexer();
     }
 
     public void indexDocument(DocumentStructure documentStructure)
