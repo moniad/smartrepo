@@ -30,3 +30,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Storage ###
+storage/*
+!storage/note.txt

@@ -5,19 +5,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import pl.edu.agh.smart_repo.common.file.FileService;
-import pl.edu.agh.smart_repo.indexer.IndexerService;
-import pl.edu.agh.smart_repo.parser.ParserService;
-import pl.edu.agh.smart_repo.request_handler.uploader.FileUploadHandler;
-import pl.edu.agh.smart_repo.service.SearchService;
+import pl.edu.agh.smart_repo.common.results.Result;
+import pl.edu.agh.smart_repo.services.directory_tree.FileTreeFetcherService;
+import pl.edu.agh.smart_repo.services.upload.FileUploadService;
+import pl.edu.agh.smart_repo.services.search.SearchService;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.List;
 
 @RestController
 public class RequestController {
@@ -25,28 +20,40 @@ public class RequestController {
     @Autowired
     SearchService searchService;
     @Autowired
-    IndexerService indexerService;
+    FileUploadService fileUploadService;
     @Autowired
-    ParserService parserService;
-    @Autowired
-    FileUploadHandler fileUploadHandler;
-    @Autowired
-    FileService fileService;
+    FileTreeFetcherService fileTreeFetcherService;
+
 
     @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
     @ResponseBody
-    public ResponseEntity<String> indexFile(@RequestParam("files") MultipartFile file) throws IOException {
-        System.out.println("file: " + file.getName());
-        File convFile = new File(Objects.requireNonNull(file.getOriginalFilename()));
-        convFile.createNewFile();
-        FileOutputStream fos = new FileOutputStream(convFile);
-        fos.write(file.getBytes());
-        fos.close();
-        System.out.println("convFile: " + convFile);
-        System.out.println("convFile.getAbsolutePath: " + convFile.getAbsolutePath());
-        System.out.println("convFile.getName: " + convFile.getName());
-        System.out.println("convFile.getName: " + convFile.toURI());
+    public ResponseEntity<String> uploadFile(@RequestParam("files") MultipartFile file) throws IOException {
 
-        return new ResponseEntity<>("added file", HttpStatus.OK);
+        //TODO file extension could be checked here, change fileService to accept MultiparFile
+
+        Result result = fileUploadService.processFile(file);
+
+        if (result.isSuccess())
+            return new ResponseEntity<>("added file: " + file.getOriginalFilename(), HttpStatus.OK);
+        else
+            return new ResponseEntity<>("error while adding file: " + file.getOriginalFilename() +
+                    " error: '" + result.getMessage() + "'",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @GetMapping("/search/{phrase}")
+    @ResponseBody
+    public ResponseEntity<List<String>> searchForPhrase(@PathVariable String phrase) {
+        System.out.println("SEARCH for: " + phrase);
+        List<String> documentsContainingPhraseNames = searchService.searchDocuments(phrase);
+        return new ResponseEntity<>(documentsContainingPhraseNames, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/files")
+    @ResponseBody
+    public ResponseEntity<List<File>> getFiles(@RequestParam("path") String path) throws IOException {
+        var files = fileTreeFetcherService.fetchFileTree(path, false, null);
+
+        return new ResponseEntity<>(files, HttpStatus.OK);
     }
 }
