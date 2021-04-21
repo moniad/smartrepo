@@ -13,4 +13,4 @@ The main goal of this project is to provide a smart repository allowing users to
 - Tomasz Skrzek
 - Anna Świadek
 - Jakub Tomsia
-- Mateusz Wieczorek.
+- Mateusz Wieczorek

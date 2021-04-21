@@ -1,0 +1,11 @@
+stop-sign.jpg:1282500000
+Easy-to-parse-document.pdf:553501100
+receipt.png:3069946200
+testocr.png:2044453900
+Medium-easy-to-parse-document.pdf:809985300
+neat_handwriting.jpg:884042200
+spanish_scan.png:2443447600
+tess_fail.png:1002603700
+bowers_page.jpg:4889248000
+message.jpg:1507763500
+Difficult-to-parse-document.pdf:3592614200
