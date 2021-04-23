@@ -13,11 +13,13 @@ public class FileInfo {
     private long createDate;
     private String extension;
     private boolean isDirectory;
+    private long size;
 
 
-    public FileInfo(String name, long createDate, boolean isDirectory){
+    public FileInfo(String name, long createDate, boolean isDirectory, long size){
         this.createDate = createDate;
         this.isDirectory = isDirectory;
         this.name = name;
+        this.size = size;
     }
 }

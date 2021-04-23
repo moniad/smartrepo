@@ -51,7 +51,7 @@ public class FileTreeFetcherService {
         } catch (IOException e) {
             log.error("Error while getting additional file data from " + file);
         }
-        var fileInfo = new FileInfo(file.getName(), attr.creationTime().toMillis(), file.isDirectory());
+        var fileInfo = new FileInfo(file.getName(), attr.creationTime().toMillis(), file.isDirectory(), file.length());
         if (!file.isDirectory()) {
             var extension = fileExtensionService.getExtension(file);
             fileInfo.setExtension(extension);
