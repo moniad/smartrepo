@@ -4,11 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentFields;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
 import pl.edu.agh.smart_repo.common.results.Result;
 import pl.edu.agh.smart_repo.common.results.ResultType;
+import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -35,79 +35,16 @@ public class IndexerService {
         client = HttpClient.newHttpClient();
         index = configurationFactory.getElasticSearchAddress() + "/" + configurationFactory.getIndex();
 
-        String requestBody = String.format("{\"settings\":{\"number_of_shards\":%d,\"number_of_replicas\":%d}}",
-                number_of_shards, number_of_replicas);
-
-        log.info("Send init index: '" + requestBody + "', address: " + index);
-
-        HttpRequest request = HttpRequest.newBuilder(URI.create(index))
-                .header("Content-Type", "application/json")
-                .PUT(HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
-
-        try {
-            client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (ConnectException e) {
-            log.error("Error while setting up index (index already exists)");
-        } catch (InterruptedException | IOException e) {
-            log.error("Unexpected error while connecting to ElasticSearch (init index)");
-        }
-
-
-        requestBody = "{\n" +
-                "  \"properties\" : {\n" +
-                "      \"name\" : { \"type\" : \"text\" },\n" +
-                "      \"path\" : { \"type\" : \"text\" },\n" +
-                "      \"contents\" : { \"type\" : \"text\" },\n" +
-                "      \"keywords\" : { \"type\" : \"text\" },\n" +
-                "      \"creation_date\" : { \"type\" : \"text\" },\n" +
-                "      \"modification_date\" : { \"type\" : \"text\" },\n" +
-                "      \"language\" : { \"type\" : \"text\" }\n" +
-                "  }\n" +
-                "}";
-
-        log.info("Send init index mapping: '" + requestBody + "'");
-
-        request = HttpRequest.newBuilder(URI.create(index + "/" + "_mapping"))
-                .header("Content-Type", "application/json")
-                .PUT(HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
-
-        try {
-            client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (ConnectException e) {
-            log.error("Error while setting up index mapping (mapping already exist)");
-        } catch (InterruptedException | IOException e) {
-            log.error("Unexpected error while connecting to ElasticSearch (init mappings");
-        }
-
+        createAndSendInitIndexRequest(number_of_shards, number_of_replicas);
+        createAndSendInitIndexMappingRequest();
     }
 
     public Result indexDocument(DocumentStructure documentStructure) {
 
-        String requestBody = String.format("{\n" +
-                        "  \"name\": \"%s\",\n" +
-                        "  \"path\": \"%s\",\n" +
-                        "  \"contents\": \"%s\",\n" +
-                        "  \"keywords\": \"%s\",\n" +
-                        "  \"create_date\": \"%s\",\n" +
-                        "  \"modification_date\": \"%s\",\n" +
-                        "  \"language\": \"%s\"\n" +
-                        "}",
-                documentStructure.getByDocumentField(DocumentFields.NAME),
-                documentStructure.getByDocumentField(DocumentFields.PATH),
-                documentStructure.getByDocumentField(DocumentFields.CONTENTS),
-                documentStructure.getByDocumentField(DocumentFields.KEYWORDS),
-                documentStructure.getByDocumentField(DocumentFields.CREATION_DATE),
-                documentStructure.getByDocumentField(DocumentFields.MODIFICATION_DATE),
-                documentStructure.getByDocumentField(DocumentFields.LANGUAGE));
+        String requestBody = createIndexDocumentRequest(documentStructure);
+        HttpRequest request = createRequest(index + "/" + "_doc", "POST", requestBody);
 
         log.info("Send index document: '" + requestBody + "'");
-
-        HttpRequest request = HttpRequest.newBuilder(URI.create(index + "/" + "_doc"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
 
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -126,5 +63,75 @@ public class IndexerService {
 
     public List<String> search(DocumentFields documentField, String phrase) {
         return Collections.singletonList("xd");
+    }
+
+
+    private void createAndSendInitIndexRequest(int number_of_shards, int number_of_replicas) {
+        String requestBody = String.format("{\"settings\":{\"number_of_shards\":%d,\"number_of_replicas\":%d}}",
+                number_of_shards, number_of_replicas);
+
+        log.info("Send init index: '" + requestBody + "', address: " + index);
+
+        HttpRequest request = createRequest(index, "PUT", requestBody);
+
+        try {
+            client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (ConnectException e) {
+            log.error("Error while setting up index (index already exists)");
+        } catch (InterruptedException | IOException e) {
+            log.error("Unexpected error while connecting to ElasticSearch (init index)");
+        }
+    }
+
+    private void createAndSendInitIndexMappingRequest() {
+        String requestBody = "{\n" +
+                "  \"properties\" : {\n" +
+                "      \"name\" : { \"type\" : \"text\" },\n" +
+                "      \"path\" : { \"type\" : \"text\" },\n" +
+                "      \"contents\" : { \"type\" : \"text\" },\n" +
+                "      \"keywords\" : { \"type\" : \"text\" },\n" +
+                "      \"creation_date\" : { \"type\" : \"text\" },\n" +
+                "      \"modification_date\" : { \"type\" : \"text\" },\n" +
+                "      \"language\" : { \"type\" : \"text\" }\n" +
+                "  }\n" +
+                "}";
+
+        log.info("Send init index mapping: '" + requestBody + "'");
+
+        HttpRequest request = createRequest(index + "/" + "_mapping", "PUT", requestBody);
+
+        try {
+            client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (ConnectException e) {
+            log.error("Error while setting up index mapping (mapping already exist)");
+        } catch (InterruptedException | IOException e) {
+            log.error("Unexpected error while connecting to ElasticSearch (init mappings");
+        }
+    }
+
+    private HttpRequest createRequest(String uriString, String method, String requestBody) {
+        return HttpRequest.newBuilder(URI.create(uriString))
+                .header("Content-Type", "application/json")
+                .method(method, HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+    }
+
+    private String createIndexDocumentRequest(DocumentStructure documentStructure) {
+        return String.format("{\n" +
+                        "  \"name\": \"%s\",\n" +
+                        "  \"path\": \"%s\",\n" +
+                        "  \"contents\": \"%s\",\n" +
+                        "  \"keywords\": \"%s\",\n" +
+                        "  \"create_date\": \"%s\",\n" +
+                        "  \"modification_date\": \"%s\",\n" +
+                        "  \"language\": \"%s\"\n" +
+                        "}",
+                documentStructure.getByDocumentField(DocumentFields.NAME),
+                documentStructure.getByDocumentField(DocumentFields.PATH),
+                documentStructure.getByDocumentField(DocumentFields.CONTENTS),
+                documentStructure.getByDocumentField(DocumentFields.KEYWORDS),
+                documentStructure.getByDocumentField(DocumentFields.CREATION_DATE),
+                documentStructure.getByDocumentField(DocumentFields.MODIFICATION_DATE),
+                documentStructure.getByDocumentField(DocumentFields.LANGUAGE));
     }
 }
