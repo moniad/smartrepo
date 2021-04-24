@@ -4,7 +4,10 @@ public enum DocumentFields {
     NAME("name"),
     PATH("path"),
     CONTENTS("contents"),
-    KEYWORDS("keywords");
+    KEYWORDS("keywords"),
+    CREATION_DATE("creation_date"),
+    MODIFICATION_DATE("modification_date"),
+    LANGUAGE("language");
 
     private final String s;
 
