@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pl.edu.agh.smart_repo.common.file.AcceptableFileExtensions;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
+import pl.edu.agh.smart_repo.services.file_extension.FileExtensionService;
 
 import java.io.File;
 import java.io.IOException;

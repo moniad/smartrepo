@@ -14,4 +14,4 @@ ENV HOST=$RABBITMQ_HOST
 
 COPY --from=build ./target/txt_tika-1.0-SNAPSHOT-jar-with-dependencies.jar .
 
-ENTRYPOINT java -jar txt_tika-1.0-SNAPSHOT-jar-with-dependencies.jar $HOST docker
+ENTRYPOINT java -jar txt_tika-1.0-SNAPSHOT-jar-with-dependencies.jar $HOST

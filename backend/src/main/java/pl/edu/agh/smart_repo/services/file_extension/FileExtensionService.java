@@ -1,4 +1,4 @@
-package pl.edu.agh.smart_repo.services.parse;
+package pl.edu.agh.smart_repo.services.file_extension;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
