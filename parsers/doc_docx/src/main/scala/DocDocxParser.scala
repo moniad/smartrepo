@@ -5,34 +5,40 @@ import org.apache.poi.hwpf.extractor.WordExtractor
 
 import java.io.{File, FileInputStream, FileOutputStream}
 import java.nio.file.Paths
+import scala.util.{Failure, Success, Using}
 
 object DocDocxParser extends App {
 
   //TODO: create two queues: one for doc and the second for docx
+  parseDoc("example_file.doc") match {
+    case Success(i) => println(i)
+    case Failure(s) => println(s"Failed. Reason: $s")
+  }
 
   def parseDoc (docFilePath: String) = {
-    val docPath = Paths.get("/storage/", docFilePath)
-    val docFin = new File(docPath.toUri)
-    val docfis = new FileInputStream(docFin)
-    val doc = new HWPFDocument(docfis)
-    val docEx = new WordExtractor(doc)
-    val docText = docEx.getText()
-    println(docText)
+    val file = getFileFromStorage(docFilePath)
 
-    docfis.close()
-    docText
+    Using(new FileInputStream(file)) { fis =>
+      val doc = new HWPFDocument(fis)
+      val docEx = new WordExtractor(doc)
+      val docText = docEx.getText()
+      docText
+    }
   }
 
   def parseDocx (docxFilePath: String) = {
-    val docxPath = Paths.get("/storage/", docxFilePath)
-    val docxFin = new File(docxPath.toUri)
-    val docxfis = new FileInputStream(docxFin)
-    val docx = new XWPFDocument(docxfis)
-    val docxEx = new XWPFWordExtractor(docx);
-    val docxText = docxEx.getText()
-    println(docxText)
+    val file = getFileFromStorage(docxFilePath)
 
-    docxfis.close()
-    docxText
+    Using(new FileInputStream(file)) { fis =>
+      val docx = new XWPFDocument(fis)
+      val docxEx = new XWPFWordExtractor(docx)
+      val docxText = docxEx.getText()
+      docxText
+    }
+  }
+
+  def getFileFromStorage(path: String)= {
+    val fullPath = Paths.get("/storage/", path)
+    new File(fullPath.toUri)
   }
 }
