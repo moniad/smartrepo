@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import pl.edu.agh.smart_repo.common.file.FileInfo;
 import pl.edu.agh.smart_repo.common.results.Result;
 import pl.edu.agh.smart_repo.services.directory_tree.FileTreeFetcherService;
 import pl.edu.agh.smart_repo.services.upload.FileUploadService;
@@ -51,7 +52,7 @@ public class RequestController {
 
     @GetMapping(value = "/files")
     @ResponseBody
-    public ResponseEntity<List<File>> getFiles(@RequestParam("path") String path) throws IOException {
+    public ResponseEntity<List<FileInfo>> getFiles(@RequestParam("path") String path) throws IOException {
         var files = fileTreeFetcherService.fetchFileTree(path, false, null);
 
         return new ResponseEntity<>(files, HttpStatus.OK);
