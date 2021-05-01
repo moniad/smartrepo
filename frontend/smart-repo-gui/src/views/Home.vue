@@ -4,14 +4,11 @@
       class="overflow-hidden"
       style="position: relative;">
     <v-container :fluid="true" class>
-      <v-breadcrumbs
-          :items="breadItems"
-      ></v-breadcrumbs>
+      <breadcrumb :trigger="breadcrumbTrigger" :text="breadcrumbText" :href="breadcrumbHref"/>
       <v-data-table :headers="headers"
                     :items="items"
                     :search="search"
                     hide-default-footer>
-
         <template v-slot:top>
           <v-text-field
               v-model="search"
@@ -21,7 +18,7 @@
 
         </template>
         <template #item="{ item }">
-          <tr>
+          <tr @click="to(item.name,item.type)">
             <td class="pr-0">
               <v-layout justify-end>
                 <v-icon v-if="item.type === 'png'">mdi-image-outline</v-icon>
@@ -103,31 +100,20 @@
   </v-sheet>
 </template>
 <script>
-import axios from 'axios';
+import {mapActions} from "vuex";
+import Breadcrumb from "../components/utils/Breadcrumb";
 export default {
   name: "home",
   data: () => ({
     search:'',
     drawerItem: null,
     drawerActive: false,
-    breadItems: [
-      {
-        text: 'My Repo',
-        disabled: false,
-        href: 'breadcrumbs_dashboard',
-      },
-      {
-        text: 'Katalog 1',
-        disabled: false,
-        href: 'breadcrumbs_link_1',
-      },
-      {
-        text: 'Katalog 2',
-        disabled: true,
-        href: 'breadcrumbs_link_2',
-      },
-    ],
+    name:'',
+    breadcrumbTrigger:0
   }),
+  components:{
+    Breadcrumb
+  },
   computed: {
     headers() {
       return [
@@ -142,33 +128,37 @@ export default {
     },
     items() {
       return [
-        {name: 'Katalog 3',upload_date:'12-02-2020' , uploaded_by: 'Tomasz Skrzek',type:'', size: '18 MB', info: ''},
+        {name: 'sadd',upload_date:'12-02-2020' , uploaded_by: 'Tomasz Skrzek',type:'', size: '18 MB', info: ''},
         {name: 'Plik',upload_date:'12-02-2020' , uploaded_by: 'Tomasz Skrzek',type:'txt', size: '148 MB', info: ''},
         {name: 'Zdjecie',upload_date:'12-02-2020' , uploaded_by: 'Tomasz Skrzek',type:'png', size: '2 MB', info: ''},
       ];
     },
   },
   methods: {
-    startup() {
-      console.log("Page initiation done.")
-      // this.getComp1Status()
+    ...mapActions("repo",["loadFiles"]),
+    to(name,type) {
+      if(!type){
+        console.log(name)
+        console.log(type)
+        this.name = this.name +'/'+name
+        this.$router.push({
+          path: this.name
+        })
+      }
     },
-    getComp1Status: function() {
-      axios.get("http://localhost:7777/status/comp1")
-              .then(async response => {
-        if (response.status === 200) {
-          console.log("Status of \"comp1\": " + response.data)
-        } else {
-          console.log("ERROR: Cannot get component status from server! (" + response.status + ")")
-        }
-      })
-      .catch(error => {
-        console.error("An error occurred during receiving response!\n", error);
-      })
+  },
+  watch:{
+    $route(to,from){
+      console.log(to)
+      if(to.path !== '/'){
+        this.name = to.path
+      } else this.name = ''
+      this.loadFiles(to.path)
+      this.from=from
     }
   },
-  created() {
-    this.startup()
+  beforeMount() {
+    this.loadFiles(this.$route.path)
   }
 };
 </script>
