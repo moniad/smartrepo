@@ -20,8 +20,13 @@ class VideoParserTestCase(unittest.TestCase):
             pika.ConnectionParameters(host=host))
         cls.channel = cls._connection.channel()
 
-        cls.channel.queue_declare(queue='mp4')
-        cls.channel.basic_publish(exchange='', routing_key='mp4', body=cls.path_input)
+        cls.channel.queue_declare(queue='video', durable=True)
+        cls.channel.basic_publish(exchange='',
+                                  routing_key='video',
+                                  body=cls.path_input,
+                                  properties=pika.BasicProperties(
+                                      delivery_mode=2,  # make message persistent
+                                  ))
         time.sleep(15)
 
     @classmethod

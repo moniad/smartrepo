@@ -61,6 +61,7 @@ def callback(ch, method, properties, body):
     print(f"Received path: {body.decode()}")
     parser = VideoParser(video_path=body.decode())
     parser.parse()
+    ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
 if __name__ == "__main__":
@@ -71,9 +72,10 @@ if __name__ == "__main__":
         pika.ConnectionParameters(host=host))
     channel = connection.channel()
 
-    channel.queue_declare(queue='mp4')
+    channel.queue_declare(queue='video', durable=True)
 
-    channel.basic_consume(queue='mp4', on_message_callback=callback, auto_ack=True)
+    channel.basic_qos(prefetch_count=1)
+    channel.basic_consume(queue='video', on_message_callback=callback)
 
     print(' [*] Waiting for messages.')
     channel.start_consuming()
