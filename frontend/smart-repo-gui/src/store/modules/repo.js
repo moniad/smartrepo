@@ -56,6 +56,30 @@ const repoModule = {
         },
         resetFiles({ commit, dispatch, rootGetters, getters, rootState, state }){
             commit('RESTART_FILES');
+        },
+        fileDelete({ commit, dispatch, rootGetters, getters, rootState, state }, path){
+            console.log(path)
+            axios.delete("http://localhost:7777/files", {params:{
+                path:path
+                }})
+                .then(async response =>{
+                    console.log(response)
+                })
+                .catch(error =>{
+                    console.error("An error occurred during deleting file!\n", error)
+                })
+        },
+        directoryPost({ commit, dispatch, rootGetters, getters, rootState, state }, path){
+            console.log(path)
+            axios.post("http://localhost:7777/files", {params:{
+                path:path
+                }})
+                .then(async response =>{
+                    console.log(response)
+                })
+                .catch(error =>{
+                    console.error("An error occurred during creating directory!\n", error)
+                })
         }
     },
     getters:{

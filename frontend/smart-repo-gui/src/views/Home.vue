@@ -1,19 +1,38 @@
 <template>
-  <v-sheet
-      height="100%"
-      class="overflow-hidden"
-      style="position: relative;">
+  <v-sheet height="100%" class="overflow-hidden" style="position: relative">
     <v-container :fluid="true" class>
-      <breadcrumb :trigger="breadcrumbTrigger" :text="breadcrumbText" :href="breadcrumbHref"/>
-      <v-data-table :headers="headers"
-                    :items="items"
-                    :search="search"
-                    hide-default-footer>
+      <breadcrumb
+        :trigger="breadcrumbTrigger"
+        :text="breadcrumbText"
+        :href="breadcrumbHref"
+      />
+      <v-app-bar>
+        <button
+          type="button"
+          @click="showDirectoryInput()"
+          title="Create directory"
+        >
+          <v-icon>mdi-plus</v-icon>
+        </button>
+        <v-text-field
+          v-model="directoryName"
+          label="Directory name"
+          class="mx-4"
+          v-if="directoryInputVisible"
+        />
+        <v-btn v-if="directoryInputVisible" @click="createDirectory()">Create</v-btn>
+      </v-app-bar>
+      <v-data-table
+        :headers="headers"
+        :items="items"
+        :search="search"
+        hide-default-footer
+      >
         <template v-slot:top>
           <v-text-field
-              v-model="search"
-              label="Search"
-              class="mx-4"
+            v-model="search"
+            label="Search"
+            class="mx-4"
           ></v-text-field>
         </template>
         <template #item="{ item }">
@@ -30,9 +49,25 @@
             <td> {{item.extension}}</td>
             <td> {{item.size}}</td>
             <td class="pl-0">
-              <v-btn class="ma-2" icon @click.stop="drawerItem = item;drawerActive = !drawerActive">
+              <v-btn
+                class="ma-2"
+                icon
+                @click.stop="
+                  drawerItem = item;
+                  drawerActive = !drawerActive;
+                "
+              >
                 <v-icon>mdi-information-outline</v-icon>
               </v-btn>
+            </td>
+            <td>
+              <button
+                type="button"
+                @click="deleteFile(item.name)"
+                title="Remove file"
+              >
+                <v-icon>mdi-delete</v-icon>
+              </button>
             </td>
           </tr>
         </template>
@@ -104,7 +139,7 @@ import {dataMixin} from "../utils/mixins/handle-data";
 export default {
   name: "home",
   data: () => ({
-    search:'',
+    search: "",
     drawerItem: null,
     drawerActive: false,
     name:'',
@@ -133,14 +168,36 @@ export default {
   },
   methods: {
     ...mapActions("repo",["loadFiles"]),
+    ...mapActions("repo", ["fileDelete"]),
+    ...mapActions("repo", ["directoryPost"]),
     to(name,directory) {
       if(directory){
         this.name = this.name +'/'+name
         this.$router.push({
-          path: this.name
-        })
+          path: this.name,
+        });
       }
     },
+    deleteFile(name) {
+      //TODO: pass directory (that info should be stored when file tree is displayed properly)
+      let currentDirectory = ''
+      name = 'test.txt'
+      let path = currentDirectory+name;
+      this.fileDelete(path);
+    },
+    showDirectoryInput() {
+      this.directoryInputVisible = true;
+    },
+    createDirectory(){
+      //TODO: pass directory (that info should be stored when file tree is displayed properly)
+      let currentDirectory = ''
+      let name = this.directoryName;
+      let path = currentDirectory+name;
+      console.log(path)
+      this.directoryPost(path);
+      this.directoryName = "";
+      //TODO: reload view with files
+    }
   },
   watch:{
     $route(to,from){
@@ -154,8 +211,8 @@ export default {
       return this.files
     },
   },
-  created() {
-    this.loadFiles(this.$route.path)
-  }
+  beforeMount() {
+    this.loadFiles(this.$route.path);
+  },
 };
 </script>
