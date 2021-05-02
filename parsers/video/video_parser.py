@@ -3,6 +3,7 @@ import sys
 import moviepy.editor as mpe
 import os
 import ntpath
+import pika
 
 
 class VideoParser:
@@ -56,9 +57,24 @@ class VideoParser:
             self.extract_audio()
 
 
-if __name__ == "__main__":
-    # python VideoParser.py pathIn
-    pathInput = sys.argv[1]
-
-    parser = VideoParser(video_path=pathInput)
+def callback(ch, method, properties, body):
+    print(f"Received path: {body.decode()}")
+    parser = VideoParser(video_path=body.decode())
     parser.parse()
+
+
+if __name__ == "__main__":
+
+    host = "localhost"
+
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(host=host))
+    channel = connection.channel()
+
+    channel.queue_declare(queue='mp4')
+
+    channel.basic_consume(queue='mp4', on_message_callback=callback, auto_ack=True)
+
+    print(' [*] Waiting for messages.')
+    channel.start_consuming()
+
