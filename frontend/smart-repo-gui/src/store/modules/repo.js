@@ -9,10 +9,17 @@ const defaultState = () => {
 const repoModule = {
     namespaced: true,
     state: () => {
-        defaultState()
+        return {
+            files: [],
+        };
     },
     mutations: {
-
+        UPDATE_FILES(state, files){
+            state.files = files;
+        },
+        RESTART_FILES(state){
+            state.files = [];
+        }
     },
     actions: {
         uploadFiles(
@@ -37,19 +44,18 @@ const repoModule = {
                 })
         },
         loadFiles({ commit, dispatch, rootGetters, getters, rootState, state }, name){
-            console.log(name)
-            let path = ''
-            if(name) path = path + name
-            console.log(path)
             axios.get("http://localhost:7777/files", {params:{
-                path:path
+                path:name?name:''
                 }})
                 .then(async response =>{
-                    console.log(response)
+                    commit('UPDATE_FILES',response.data)
                 })
                 .catch(error =>{
                     console.error("An error occurred during receiving response!\n", error)
                 })
+        },
+        resetFiles({ commit, dispatch, rootGetters, getters, rootState, state }){
+            commit('RESTART_FILES');
         }
     },
     getters:{
