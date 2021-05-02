@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import pl.edu.agh.smart_repo.common.file.FileInfo;
 import pl.edu.agh.smart_repo.common.results.Result;
+import pl.edu.agh.smart_repo.services.directory_tree.FileManagerService;
 import pl.edu.agh.smart_repo.services.directory_tree.FileTreeFetcherService;
 import pl.edu.agh.smart_repo.services.upload.FileUploadService;
 import pl.edu.agh.smart_repo.services.search.SearchService;
@@ -24,6 +25,8 @@ public class RequestController {
     FileUploadService fileUploadService;
     @Autowired
     FileTreeFetcherService fileTreeFetcherService;
+    @Autowired
+    FileManagerService fileManagerService;
 
 
     @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
@@ -56,5 +59,30 @@ public class RequestController {
         var files = fileTreeFetcherService.fetchFileTree(path, false, null);
 
         return new ResponseEntity<>(files, HttpStatus.OK);
+    }
+
+    @CrossOrigin
+    @DeleteMapping(value = "/files")
+    @ResponseBody
+    public ResponseEntity<String> deleteFile(@RequestParam("path") String path) throws IOException {
+        var result = fileManagerService.deleteFile(path);
+
+        if (result.isSuccess())
+            return new ResponseEntity<>("Deleted file: " + path, HttpStatus.OK);
+        else
+            return new ResponseEntity<>(result.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @PostMapping(value = "/files")
+    @ResponseBody
+    public ResponseEntity<String> createDirectory(@RequestBody String path) throws IOException {
+        var result = fileManagerService.createDirectory(path);
+
+        if (result.isSuccess())
+            return new ResponseEntity<>("Created directory: " + path, HttpStatus.OK);
+        else
+            return new ResponseEntity<>(result.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
