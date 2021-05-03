@@ -72,6 +72,22 @@
           </tr>
         </template>
       </v-data-table>
+      <v-snackbar
+          v-model="isUploaded"
+      >
+        Files added successfully
+
+        <template v-slot:action="{ attrs }">
+          <v-btn
+              color="green"
+              text
+              v-bind="attrs"
+              @click="isUploaded = false"
+          >
+            Close
+          </v-btn>
+        </template>
+      </v-snackbar>
 <!--      <v-navigation-drawer-->
 <!--          v-model="drawerActive"-->
 <!--          v-if="drawerActive"-->
@@ -145,7 +161,9 @@ export default {
     name:'',
     breadcrumbTrigger:0,
     breadcrumbText: '',
-    breadcrumbHref:''
+    breadcrumbHref:'',
+    directoryInputVisible: false,
+    directoryName: "",
   }),
   components:{
 

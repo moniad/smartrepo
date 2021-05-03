@@ -11,14 +11,19 @@ const repoModule = {
     state: () => {
         return {
             files: [],
+            isUploaded: false
         };
     },
     mutations: {
         UPDATE_FILES(state, files){
             state.files = files;
         },
+        FILES_UPLOADED(state){
+            state.isUploaded = true;
+        },
         RESTART_FILES(state){
             state.files = [];
+            state.isUploaded=false;
         }
     },
     actions: {
@@ -35,6 +40,7 @@ const repoModule = {
                 .then(async response => {
                     if (response.status === 200) {
                         console.log("Response: " + response.data)
+                        commit('FILES_UPLOADED')
                     } else {
                         console.log("ERROR: (" + response.status + ")")
                     }
