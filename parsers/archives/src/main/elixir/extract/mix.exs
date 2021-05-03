@@ -1,4 +1,4 @@
-defmodule EXTRACT.MixProject do
+defmodule Extract.MixProject do
   use Mix.Project
 
   def project do
@@ -14,6 +14,7 @@ defmodule EXTRACT.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
+      applications: [:amqp],
       extra_applications: [:logger]
     ]
   end
