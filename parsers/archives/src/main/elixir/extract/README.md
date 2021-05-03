@@ -7,5 +7,5 @@ Required Erlang end Elixir installed
 
 ## Run
 ```
-elixir lib/extract.ex
+mix run extract.ex
 ```
