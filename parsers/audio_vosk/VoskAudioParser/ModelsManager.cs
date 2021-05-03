@@ -12,7 +12,7 @@ namespace VoskAudioParser
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(ModelsManager));
 
-        private static String BaseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "models");
+        private static readonly String BaseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "models");
 
         private Dictionary<SupportedLanguages, Model> Models = new();
 
@@ -40,7 +40,8 @@ namespace VoskAudioParser
             }
             else
             {
-                var newModel = Paths.GetValueOrNone(language).Map(p => {
+                var newModel = Paths.GetValueOrNone(language).Map(p =>
+                {
                     var model = new Model(p);
                     Models.Add(language, model);
                     return model;

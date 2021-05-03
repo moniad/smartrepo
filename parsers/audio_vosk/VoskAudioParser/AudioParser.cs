@@ -5,39 +5,49 @@ using System.Collections.Generic;
 using System.IO;
 using Optional;
 using Vosk;
+using NAudio.Wave.SampleProviders;
+using NLayer.NAudioSupport;
 
 namespace VoskAudioParser
 {
     public class AudioParser
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(AudioParser));
+        private static readonly ILog Log = LogManager.GetLogger(typeof(AudioParser));
 
         private readonly TextExtractor Extractor = new();
 
-        public List<string> ParseWaveFile(String path, Model model)
+        public string[] AcceptedExtensions { get; } = { "wav", "mp3" };
+
+        public string Parse(String path, Model model, String extension)
         {
-            var tmpFile = Option.None<string>();
+            var results = String.Equals(extension, "wav") ? ParseWaveFile(path, model) : ParseMp3File(path, model);
+            Log.Info(results);
+            return String.Join("\n", results);
+        }
 
-            using (var reader = new WaveFileReader(path))
+        public List<string> ParseMp3File(String path, Model model)
+        {
+            string outFile;
+
+            using (var reader = new Mp3FileReader(path, wf => new Mp3FrameDecompressor(wf)))
             {
-                int sampleRate = reader.WaveFormat.SampleRate;
-                int channelsNumer = reader.WaveFormat.Channels;
-
-                if (sampleRate < FormatRequirements.MinSamplingRate || channelsNumer > FormatRequirements.MaxChannelsNumber)
-                {
-                    var outFile = CreateTempFile(path);
-                    var outFormat = new WaveFormat(Math.Max(sampleRate, FormatRequirements.MinSamplingRate),
-                        FormatRequirements.BitsPerSample,
-                        Math.Min(channelsNumer, FormatRequirements.MaxChannelsNumber));
-                    using var resampler = new MediaFoundationResampler(reader, outFormat);
-                    WaveFileWriter.CreateWaveFile(outFile, resampler);
-
-                    path = outFile;
-                    tmpFile = Option.Some(outFile);
-                }
+                outFile = CreateTempFile(path);
+                WaveFileWriter.CreateWaveFile(outFile, reader);
             }
 
-            var results = Extractor.ExtractFromWaveFile(path, model);
+            var results = ParseWaveFile(path, model);
+
+            DeleteFile(outFile);
+
+            return results;
+        }
+
+        public List<string> ParseWaveFile(String path, Model model)
+        {
+            var tmpFile = Resample(path);
+            tmpFile = StereoToMono(tmpFile.ValueOr(path));
+
+            var results = Extractor.ExtractFromWaveFile(tmpFile.ValueOr(path), model);
 
             foreach (var filePath in tmpFile)
             {
@@ -47,28 +57,44 @@ namespace VoskAudioParser
             return results;
         }
 
-        public List<string> ParseAudioFile(String path, Model model)
+        private Option<string> Resample(string path)
         {
-            string outFile;
-
-            using (var reader = new MediaFoundationReader(path))
+            using (var reader = new AudioFileReader(path))
             {
                 int sampleRate = reader.WaveFormat.SampleRate;
+
+                if (sampleRate < FormatRequirements.MinSamplingRate)
+                {
+                    var outFile = CreateTempFile(path);
+                    var resampler = new WdlResamplingSampleProvider(reader, Math.Max(sampleRate, FormatRequirements.MinSamplingRate));
+                    WaveFileWriter.CreateWaveFile16(outFile, resampler);
+
+                    return Option.Some(outFile);
+                }
+            }
+            return Option.None<string>();
+        }
+
+        private Option<string> StereoToMono(string path)
+        {
+            using (var reader = new AudioFileReader(path))
+            {
                 int channelsNumer = reader.WaveFormat.Channels;
 
-                outFile = CreateTempFile(path);
-                var outFormat = new WaveFormat(Math.Max(sampleRate, FormatRequirements.MinSamplingRate),
-                    FormatRequirements.BitsPerSample,
-                    Math.Min(channelsNumer, FormatRequirements.MaxChannelsNumber));
-                using var resampler = new MediaFoundationResampler(reader, outFormat);
-                WaveFileWriter.CreateWaveFile(outFile, resampler);
+                if (channelsNumer > FormatRequirements.MaxChannelsNumber)
+                {
+                    var outFile = CreateTempFile(path);
+                    var sampleProvider = new StereoToMonoSampleProvider(reader)
+                    {
+                        LeftVolume = 0.0f,
+                        RightVolume = 1.0f
+                    };
+                    WaveFileWriter.CreateWaveFile16(outFile, sampleProvider);
+
+                    return Option.Some(outFile);
+                }
             }
-
-            var results = Extractor.ExtractFromWaveFile(outFile, model);
-
-            DeleteFile(outFile);
-
-            return results;
+            return Option.None<string>();
         }
 
         private string CreateTempFile(String path)
@@ -90,12 +116,12 @@ namespace VoskAudioParser
                 }
                 catch (IOException e)
                 {
-                    log.Error(e.Message);
+                    Log.Error(e.Message);
                 }
             }
             else
             {
-                log.Debug($"Temporary file {path} does not exist");
+                Log.Debug($"Temporary file {path} does not exist");
             }
         }
 
