@@ -20,6 +20,9 @@ const repoModule = {
         },
         FILES_UPLOADED(state){
             state.isUploaded = true;
+            setTimeout(()=>{
+                state.isUploaded = false;
+            },3000)
         },
         RESTART_FILES(state){
             state.files = [];
@@ -70,6 +73,7 @@ const repoModule = {
                 }})
                 .then(async response =>{
                     console.log(response)
+                    dispatch('loadFiles',path.split('/').slice(0, -1).join('/'));
                 })
                 .catch(error =>{
                     console.error("An error occurred during deleting file!\n", error)
@@ -77,11 +81,10 @@ const repoModule = {
         },
         directoryPost({ commit, dispatch, rootGetters, getters, rootState, state }, path){
             console.log(path)
-            axios.post("http://localhost:7777/files", {params:{
-                path:path
-                }})
+            axios.post("http://localhost:7777/files", {path:path})
                 .then(async response =>{
                     console.log(response)
+                    dispatch('loadFiles',path.split('/').slice(0, -1).join('/'));
                 })
                 .catch(error =>{
                     console.error("An error occurred during creating directory!\n", error)

@@ -26,7 +26,6 @@
         :headers="headers"
         :items="items"
         :search="search"
-        hide-default-footer
       >
         <template v-slot:top>
           <v-text-field
@@ -63,7 +62,7 @@
             <td>
               <button
                 type="button"
-                @click="deleteFile(item.name)"
+                @click.stop="deleteFile(item.name)"
                 title="Remove file"
               >
                 <v-icon>mdi-delete</v-icon>
@@ -76,75 +75,7 @@
           v-model="isUploaded"
       >
         Files added successfully
-
-        <template v-slot:action="{ attrs }">
-          <v-btn
-              color="green"
-              text
-              v-bind="attrs"
-              @click="isUploaded = false"
-          >
-            Close
-          </v-btn>
-        </template>
       </v-snackbar>
-<!--      <v-navigation-drawer-->
-<!--          v-model="drawerActive"-->
-<!--          v-if="drawerActive"-->
-<!--          absolute-->
-<!--          right-->
-<!--          temporary-->
-<!--          width="25%"-->
-<!--      >-->
-<!--        <v-list subheader>-->
-<!--          <v-subheader>Title</v-subheader>-->
-<!--          <v-list-item>-->
-<!--            <v-list-item-content>-->
-<!--              <v-list-item-title>{{ drawerItem.name }}</v-list-item-title>-->
-<!--            </v-list-item-content>-->
-<!--          </v-list-item>-->
-<!--        </v-list>-->
-
-<!--        <v-divider></v-divider>-->
-<!--        <v-img-->
-<!--            v-if="drawerItem.type === 'png'"-->
-<!--            src="https://cdn.vuetifyjs.com/images/lists/ali.png"-->
-<!--            height="300px"-->
-<!--            dark-->
-<!--        />-->
-<!--        <v-divider/>-->
-<!--        <v-list subheader>-->
-<!--          <v-subheader>Details</v-subheader>-->
-<!--          <v-list-item>-->
-<!--            Uploaded date: {{drawerItem.upload_date}}-->
-<!--          </v-list-item>-->
-<!--          <v-list-item>-->
-<!--            Uploaded by: {{drawerItem.uploaded_by}}-->
-<!--          </v-list-item>-->
-<!--          <v-list-item>-->
-<!--            Type: {{drawerItem.type}}-->
-<!--          </v-list-item>-->
-<!--          <v-list-item>-->
-<!--            Size: {{drawerItem.size}}-->
-<!--          </v-list-item>-->
-<!--        </v-list>-->
-<!--        <v-divider/>-->
-<!--        <v-list two-line subheader>-->
-<!--          <v-subheader>Activity</v-subheader>-->
-<!--          <v-list-item>-->
-<!--            <v-list-item-content>-->
-<!--              <v-list-item-title>-->
-<!--                Uploaded by: {{drawerItem.uploaded_by}}-->
-<!--              </v-list-item-title>-->
-<!--              <v-list-item-subtitle-->
-<!--                  class="text&#45;&#45;primary"-->
-<!--                  v-text="drawerItem.upload_date"-->
-<!--              >-->
-<!--              </v-list-item-subtitle>-->
-<!--            </v-list-item-content>-->
-<!--          </v-list-item>-->
-<!--        </v-list>-->
-<!--      </v-navigation-drawer/>-->
     </v-container>
   </v-sheet>
 </template>
@@ -197,21 +128,15 @@ export default {
       }
     },
     deleteFile(name) {
-      //TODO: pass directory (that info should be stored when file tree is displayed properly)
-      let currentDirectory = ''
-      name = 'test.txt'
-      let path = currentDirectory+name;
+      let path = this.name+'/'+name;
       this.fileDelete(path);
     },
     showDirectoryInput() {
       this.directoryInputVisible = true;
     },
     createDirectory(){
-      //TODO: pass directory (that info should be stored when file tree is displayed properly)
-      let currentDirectory = ''
       let name = this.directoryName;
-      let path = currentDirectory+name;
-      console.log(path)
+      let path = this.name+ '/'+name;
       this.directoryPost(path);
       this.directoryName = "";
       //TODO: reload view with files

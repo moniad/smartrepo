@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import pl.edu.agh.smart_repo.common.dto.CreateDirectoryDto;
 import pl.edu.agh.smart_repo.common.file.FileInfo;
 import pl.edu.agh.smart_repo.common.results.Result;
 import pl.edu.agh.smart_repo.services.directory_tree.FileManagerService;
@@ -76,11 +77,11 @@ public class RequestController {
 
     @PostMapping(value = "/files")
     @ResponseBody
-    public ResponseEntity<String> createDirectory(@RequestBody String path) throws IOException {
-        var result = fileManagerService.createDirectory(path);
+    public ResponseEntity<String> createDirectory(@RequestBody CreateDirectoryDto createDirectoryDto) throws IOException {
+        var result = fileManagerService.createDirectory(createDirectoryDto.getPath());
 
         if (result.isSuccess())
-            return new ResponseEntity<>("Created directory: " + path, HttpStatus.OK);
+            return new ResponseEntity<>("Created directory: " + createDirectoryDto.getPath(), HttpStatus.OK);
         else
             return new ResponseEntity<>(result.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
