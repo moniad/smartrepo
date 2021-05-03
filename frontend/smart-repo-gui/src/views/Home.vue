@@ -1,174 +1,170 @@
 <template>
-  <v-sheet
-      height="100%"
-      class="overflow-hidden"
-      style="position: relative;">
+  <v-sheet height="100%" class="overflow-hidden" style="position: relative">
     <v-container :fluid="true" class>
-      <v-breadcrumbs
-          :items="breadItems"
-      ></v-breadcrumbs>
-      <v-data-table :headers="headers"
-                    :items="items"
-                    :search="search"
-                    hide-default-footer>
-
+      <breadcrumb
+        :trigger="breadcrumbTrigger"
+        :text="breadcrumbText"
+        :href="breadcrumbHref"
+      />
+      <v-app-bar>
+        <button
+          type="button"
+          @click="showDirectoryInput()"
+          title="Create directory"
+        >
+          <v-icon>mdi-plus</v-icon>
+        </button>
+        <v-text-field
+          v-model="directoryName"
+          label="Directory name"
+          class="mx-4"
+          v-if="directoryInputVisible"
+        />
+        <v-btn v-if="directoryInputVisible" @click="createDirectory()">Create</v-btn>
+      </v-app-bar>
+      <v-data-table
+        :headers="headers"
+        :items="items"
+        :search="search"
+      >
         <template v-slot:top>
           <v-text-field
-              v-model="search"
-              label="Search"
-              class="mx-4"
+            v-model="search"
+            label="Search"
+            class="mx-4"
           ></v-text-field>
-
         </template>
         <template #item="{ item }">
-          <tr>
+          <tr @click="to(item.name,item.directory)">
             <td class="pr-0">
               <v-layout justify-end>
-                <v-icon v-if="item.type === 'png'">mdi-image-outline</v-icon>
-                <v-icon v-else-if="item.type">mdi-file-outline</v-icon>
-                <v-icon v-else>mdi-folder</v-icon>
+                <v-icon v-if="item.directory">mdi-folder</v-icon>
+                <v-icon v-else-if="item.type === 'png'">mdi-image-outline</v-icon>
+                <v-icon v-else>mdi-file-outline</v-icon>
               </v-layout>
             </td>
             <td> {{item.name}}</td>
-            <td> {{item.upload_date}}</td>
-            <td> {{item.uploaded_by}}</td>
-            <td> {{item.type}}</td>
+            <td> {{parseDate(item.createDate)}}</td>
+            <td> {{item.extension}}</td>
             <td> {{item.size}}</td>
             <td class="pl-0">
-              <v-btn class="ma-2" icon @click.stop="drawerItem = item;drawerActive = !drawerActive">
+              <v-btn
+                class="ma-2"
+                icon
+                @click.stop="
+                  drawerItem = item;
+                  drawerActive = !drawerActive;
+                "
+              >
                 <v-icon>mdi-information-outline</v-icon>
               </v-btn>
+            </td>
+            <td>
+              <button
+                type="button"
+                @click.stop="deleteFile(item.name)"
+                title="Remove file"
+              >
+                <v-icon>mdi-delete</v-icon>
+              </button>
             </td>
           </tr>
         </template>
       </v-data-table>
-      <v-navigation-drawer
-          v-model="drawerActive"
-          v-if="drawerActive"
-          absolute
-          right
-          temporary
-          width="25%"
+      <v-snackbar
+          v-model="isUploaded"
       >
-        <v-list subheader>
-          <v-subheader>Title</v-subheader>
-          <v-list-item>
-            <v-list-item-content>
-              <v-list-item-title>{{ drawerItem.name }}</v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
-
-        <v-divider></v-divider>
-        <v-img
-            v-if="drawerItem.type === 'png'"
-            src="https://cdn.vuetifyjs.com/images/lists/ali.png"
-            height="300px"
-            dark
-        />
-        <v-divider/>
-        <v-list subheader>
-          <v-subheader>Details</v-subheader>
-          <v-list-item>
-            Uploaded date: {{drawerItem.upload_date}}
-          </v-list-item>
-          <v-list-item>
-            Uploaded by: {{drawerItem.uploaded_by}}
-          </v-list-item>
-          <v-list-item>
-            Type: {{drawerItem.type}}
-          </v-list-item>
-          <v-list-item>
-            Size: {{drawerItem.size}}
-          </v-list-item>
-        </v-list>
-        <v-divider/>
-        <v-list two-line subheader>
-          <v-subheader>Activity</v-subheader>
-          <v-list-item>
-            <v-list-item-content>
-              <v-list-item-title>
-                Uploaded by: {{drawerItem.uploaded_by}}
-              </v-list-item-title>
-              <v-list-item-subtitle
-                  class="text--primary"
-                  v-text="drawerItem.upload_date"
-              >
-              </v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
-      </v-navigation-drawer>
+        Files added successfully
+        <template v-slot:action="{ attrs }">
+          <v-btn
+              color="green"
+              text
+              v-bind="attrs"
+              @click="$store.state.repo.isUploaded=false"
+          >
+            Close
+          </v-btn>
+        </template>
+      </v-snackbar>
     </v-container>
   </v-sheet>
 </template>
 <script>
-import axios from 'axios';
+import {mapActions} from "vuex";
+import {repoMixin} from "../utils/mixins/repo-mixin";
+import {dataMixin} from "../utils/mixins/handle-data";
 export default {
   name: "home",
   data: () => ({
-    search:'',
+    search: "",
     drawerItem: null,
     drawerActive: false,
-    breadItems: [
-      {
-        text: 'My Repo',
-        disabled: false,
-        href: 'breadcrumbs_dashboard',
-      },
-      {
-        text: 'Katalog 1',
-        disabled: false,
-        href: 'breadcrumbs_link_1',
-      },
-      {
-        text: 'Katalog 2',
-        disabled: true,
-        href: 'breadcrumbs_link_2',
-      },
-    ],
+    name:'',
+    breadcrumbTrigger:0,
+    breadcrumbText: '',
+    breadcrumbHref:'',
+    directoryInputVisible: false,
+    directoryName: "",
   }),
+  components:{
+
+  },
+  mixins: [repoMixin, dataMixin],
   computed: {
     headers() {
       return [
         {text: '', value: 'icon', align: 'end'},
-        {text: 'Name', value: 'name', },
-        {text: 'Upload Date', value: 'upload_date',},
-        {text: 'Uploaded By', value: 'uploaded_by'},
-        {text: 'Type', value: 'type'},
+        {text: 'Name', value: 'name'},
+        {text: 'Upload Date', value: 'createDate'},
+        {text: 'Type', value: 'extension'},
         {text: 'Size', value: 'size'},
         {text: 'Info', value: 'info'}
       ];
     },
     items() {
-      return [
-        {name: 'Katalog 3',upload_date:'12-02-2020' , uploaded_by: 'Tomasz Skrzek',type:'', size: '18 MB', info: ''},
-        {name: 'Plik',upload_date:'12-02-2020' , uploaded_by: 'Tomasz Skrzek',type:'txt', size: '148 MB', info: ''},
-        {name: 'Zdjecie',upload_date:'12-02-2020' , uploaded_by: 'Tomasz Skrzek',type:'png', size: '2 MB', info: ''},
-      ];
+      return this.files
     },
   },
   methods: {
-    startup() {
-      console.log("Page initiation done.")
-      // this.getComp1Status()
+    ...mapActions("repo",["loadFiles"]),
+    ...mapActions("repo", ["fileDelete"]),
+    ...mapActions("repo", ["directoryPost"]),
+    to(name,directory) {
+      if(directory){
+        this.name = this.name +'/'+name
+        this.$router.push({
+          path: this.name,
+        });
+      }
     },
-    getComp1Status: function() {
-      axios.get("http://localhost:7777/status/comp1")
-              .then(async response => {
-        if (response.status === 200) {
-          console.log("Status of \"comp1\": " + response.data)
-        } else {
-          console.log("ERROR: Cannot get component status from server! (" + response.status + ")")
-        }
-      })
-      .catch(error => {
-        console.error("An error occurred during receiving response!\n", error);
-      })
+    deleteFile(name) {
+      let path = this.name+'/'+name;
+      this.fileDelete(path);
+    },
+    showDirectoryInput() {
+      this.directoryInputVisible = true;
+    },
+    createDirectory(){
+      let name = this.directoryName;
+      let path = this.name+ '/'+name;
+      this.directoryPost(path);
+      this.directoryName = "";
     }
   },
-  created() {
-    this.startup()
-  }
+  watch:{
+    $route(to,from){
+      if(to.path !== '/'){
+        this.name = to.path
+      } else this.name = ''
+      this.loadFiles(to.path)
+      this.from=from
+    },
+    items() {
+      return this.files
+    },
+  },
+  beforeMount() {
+    this.loadFiles(this.$route.path);
+  },
 };
 </script>
