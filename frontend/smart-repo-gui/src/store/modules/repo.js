@@ -44,6 +44,7 @@ const repoModule = {
                     if (response.status === 200) {
                         console.log("Response: " + response.data)
                         commit('FILES_UPLOADED')
+                        dispatch('loadFiles');
                     } else {
                         console.log("ERROR: (" + response.status + ")")
                     }

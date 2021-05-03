@@ -75,6 +75,16 @@
           v-model="isUploaded"
       >
         Files added successfully
+        <template v-slot:action="{ attrs }">
+          <v-btn
+              color="green"
+              text
+              v-bind="attrs"
+              @click="$store.state.repo.isUploaded=false"
+          >
+            Close
+          </v-btn>
+        </template>
       </v-snackbar>
     </v-container>
   </v-sheet>
@@ -139,7 +149,6 @@ export default {
       let path = this.name+ '/'+name;
       this.directoryPost(path);
       this.directoryName = "";
-      //TODO: reload view with files
     }
   },
   watch:{
