@@ -9,8 +9,8 @@
   <ItemGroup>
     <PackageReference Include="log4net" Version="2.0.12" />
     <PackageReference Include="NAudio" Version="1.10.0" />
-    <PackageReference Include="NLayer.NAudioSupport" Version="1.1.0" />
     <PackageReference Include="Optional" Version="4.0.0" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.2.1" />
     <PackageReference Include="Vosk" Version="0.3.21" />
   </ItemGroup>
 
