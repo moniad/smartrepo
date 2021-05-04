@@ -1,82 +1,82 @@
 ﻿using log4net;
 using NAudio.Wave;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using Optional;
 using Vosk;
+using NAudio.Wave.SampleProviders;
 
 namespace VoskAudioParser
 {
     public class AudioParser
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(AudioParser));
+        private static readonly ILog Log = LogManager.GetLogger(typeof(AudioParser));
 
         private readonly TextExtractor Extractor = new();
 
-        public List<string> ParseWaveFile(String path, Model model)
+        public string[] AcceptedExtensions { get; } = { "wav" };
+
+        public string ParseWaveFile(String path, Model model)
         {
-            var tmpFile = Option.None<string>();
-
-            using (var reader = new WaveFileReader(path))
+            var tmpFile = CreateTempFile(path);
+            if (Resample(path, tmpFile))
             {
-                int sampleRate = reader.WaveFormat.SampleRate;
-                int channelsNumer = reader.WaveFormat.Channels;
-
-                if (sampleRate < FormatRequirements.MinSamplingRate || channelsNumer > FormatRequirements.MaxChannelsNumber)
-                {
-                    var outFile = CreateTempFile(path);
-                    var outFormat = new WaveFormat(Math.Max(sampleRate, FormatRequirements.MinSamplingRate),
-                        FormatRequirements.BitsPerSample,
-                        Math.Min(channelsNumer, FormatRequirements.MaxChannelsNumber));
-                    using var resampler = new MediaFoundationResampler(reader, outFormat);
-                    WaveFileWriter.CreateWaveFile(outFile, resampler);
-
-                    path = outFile;
-                    tmpFile = Option.Some(outFile);
-                }
+                path = tmpFile;
+            }
+            if (StereoToMono(path, tmpFile))
+            {
+                path = tmpFile;
             }
 
             var results = Extractor.ExtractFromWaveFile(path, model);
 
-            foreach (var filePath in tmpFile)
-            {
-                DeleteFile(filePath);
-            }
+            DeleteFile(tmpFile);
 
-            return results;
+            return String.Join("\n", results); ;
         }
 
-        public List<string> ParseAudioFile(String path, Model model)
+        private bool Resample(string path, string outFile)
         {
-            string outFile;
-
-            using (var reader = new MediaFoundationReader(path))
+            using (var reader = new AudioFileReader(path))
             {
                 int sampleRate = reader.WaveFormat.SampleRate;
-                int channelsNumer = reader.WaveFormat.Channels;
 
-                outFile = CreateTempFile(path);
-                var outFormat = new WaveFormat(Math.Max(sampleRate, FormatRequirements.MinSamplingRate),
-                    FormatRequirements.BitsPerSample,
-                    Math.Min(channelsNumer, FormatRequirements.MaxChannelsNumber));
-                using var resampler = new MediaFoundationResampler(reader, outFormat);
-                WaveFileWriter.CreateWaveFile(outFile, resampler);
+                if (sampleRate < FormatRequirements.MinSamplingRate)
+                {
+                    var resampler = new WdlResamplingSampleProvider(reader, Math.Max(sampleRate, FormatRequirements.MinSamplingRate));
+                    WaveFileWriter.CreateWaveFile16(outFile, resampler);
+
+                    return true;
+                }
             }
+            return false;
+        }
 
-            var results = Extractor.ExtractFromWaveFile(outFile, model);
+        private bool StereoToMono(string path, string outFile)
+        {
+            using (var reader = new AudioFileReader(path))
+            {
+                int channelsNumber = reader.WaveFormat.Channels;
 
-            DeleteFile(outFile);
+                if (channelsNumber > FormatRequirements.MaxChannelsNumber)
+                {
+                    var sampleProvider = new StereoToMonoSampleProvider(reader)
+                    {
+                        LeftVolume = 0.0f,
+                        RightVolume = 1.0f
+                    };
+                    WaveFileWriter.CreateWaveFile16(outFile, sampleProvider);
 
-            return results;
+                    return true;
+                }
+            }
+            return false;
         }
 
         private string CreateTempFile(String path)
         {
-            var fileName = Path.GetFileName(path);
-            var tmpDir = @"tmp\";
+            var fileName = Path.GetFileNameWithoutExtension(path) + ".wav";
+            var tmpDir = @"tmp";
             Directory.CreateDirectory(tmpDir);
-            Console.WriteLine(Path.Combine(tmpDir, fileName));
             return Path.Combine(tmpDir, fileName);
         }
 
@@ -90,12 +90,8 @@ namespace VoskAudioParser
                 }
                 catch (IOException e)
                 {
-                    log.Error(e.Message);
+                    Log.Error(e.Message);
                 }
-            }
-            else
-            {
-                log.Debug($"Temporary file {path} does not exist");
             }
         }
 
