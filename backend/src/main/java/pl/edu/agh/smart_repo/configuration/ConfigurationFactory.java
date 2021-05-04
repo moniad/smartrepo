@@ -36,7 +36,7 @@ public class ConfigurationFactory {
         if (args.size() > 1) {
             elasticSearchAddress = args.get(1);
         } else {
-            elasticSearchAddress = "localhost:9200";
+            elasticSearchAddress = "http://localhost:9200";
         }
     }
 
