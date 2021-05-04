@@ -18,7 +18,7 @@ import java.io.InputStream;
 @Service
 public class FileExtensionService {
 
-    private TikaConfig config = TikaConfig.getDefaultConfig();
+    private final TikaConfig config = TikaConfig.getDefaultConfig();
 
     public boolean hasAcceptableExtension(File file) throws FileNotFoundException
     {

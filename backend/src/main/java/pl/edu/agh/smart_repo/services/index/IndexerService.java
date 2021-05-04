@@ -1,11 +1,16 @@
 package pl.edu.agh.smart_repo.services.index;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vavr.control.Option;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentFields;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
+import pl.edu.agh.smart_repo.common.file.FileInfo;
 import pl.edu.agh.smart_repo.common.results.Result;
 import pl.edu.agh.smart_repo.common.results.ResultType;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
@@ -16,7 +21,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -40,7 +44,6 @@ public class IndexerService {
     }
 
     public Result indexDocument(DocumentStructure documentStructure) {
-
         String requestBody = createIndexDocumentRequest(documentStructure);
         HttpRequest request = createRequest(index + "/" + "_doc", "POST", requestBody);
 
@@ -61,8 +64,25 @@ public class IndexerService {
         return new Result(ResultType.SUCCESS);
     }
 
-    public List<String> search(DocumentFields documentField, String phrase) {
-        return Collections.singletonList("xd");
+    public Option<List<FileInfo>> search(DocumentFields documentField, String phrase, int fromIndex, int resultSize) {
+        String requestBody = createSearchRequest(phrase, documentField, fromIndex, resultSize);
+        HttpRequest request = createRequest(index + "/" + "_search", "GET", requestBody);
+
+        log.info("Searching index for: '" + requestBody + "'");
+        Option<List<FileInfo>> foundFiles = Option.none();
+
+        try {
+            HttpResponse<String> stringHttpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+            foundFiles = Option.of(mapResponseToFileInfo(stringHttpResponse.body()));
+        } catch (IOException | InterruptedException e) {
+            log.error("Error while searching index for phrase: " + phrase);
+        }
+        return foundFiles;
+    }
+
+    private List<FileInfo> mapResponseToFileInfo(String responseBody) throws JsonProcessingException {
+        return new ObjectMapper().readValue(responseBody, new TypeReference<>() {
+        });
     }
 
 
@@ -133,5 +153,23 @@ public class IndexerService {
                 documentStructure.getByDocumentField(DocumentFields.CREATION_DATE),
                 documentStructure.getByDocumentField(DocumentFields.MODIFICATION_DATE),
                 documentStructure.getByDocumentField(DocumentFields.LANGUAGE));
+    }
+
+    private String createSearchRequest(String phrase, DocumentFields documentField, int fromIndex, int resultSize) {
+        return String.format("{\n" +
+                "  \"query\": {\n" +
+                "    \"match\": {\n" +
+                "      \"content\": \"%s\"" +
+                "      }\n" +
+                "   }\n" +
+                "}, \"_source\": \"%s\"", documentField.toString(), phrase) + getPaginationPart(fromIndex, resultSize);
+    }
+
+    private String getPaginationPart(int fromIndex, int size) {
+        return String.format("\n," +
+                        "\"from\": \"%s\",\n" +
+                        "\"size\": \"%s\"",
+                fromIndex,
+                size);
     }
 }

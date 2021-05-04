@@ -1,7 +1,7 @@
 package pl.edu.agh.smart_repo.common.results;
 
 public class Result {
-    private ResultType type;
+    private final ResultType type;
     private String message;
     private Exception exception;
 

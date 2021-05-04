@@ -1,6 +1,6 @@
 package pl.edu.agh.smart_repo.request_handler;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -8,23 +8,25 @@ import org.springframework.web.multipart.MultipartFile;
 import pl.edu.agh.smart_repo.common.file.FileInfo;
 import pl.edu.agh.smart_repo.common.results.Result;
 import pl.edu.agh.smart_repo.services.directory_tree.FileTreeFetcherService;
-import pl.edu.agh.smart_repo.services.upload.FileUploadService;
 import pl.edu.agh.smart_repo.services.search.SearchService;
+import pl.edu.agh.smart_repo.services.upload.FileUploadService;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+@Slf4j
 @RestController
 public class RequestController {
 
-    @Autowired
-    SearchService searchService;
-    @Autowired
-    FileUploadService fileUploadService;
-    @Autowired
-    FileTreeFetcherService fileTreeFetcherService;
+    private final SearchService searchService;
+    private final FileUploadService fileUploadService;
+    private final FileTreeFetcherService fileTreeFetcherService;
 
+    public RequestController(SearchService searchService, FileUploadService fileUploadService, FileTreeFetcherService fileTreeFetcherService) {
+        this.searchService = searchService;
+        this.fileUploadService = fileUploadService;
+        this.fileTreeFetcherService = fileTreeFetcherService;
+    }
 
     @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
     @ResponseBody
@@ -42,19 +44,18 @@ public class RequestController {
                     HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @GetMapping("/search/{phrase}")
+    @GetMapping("/search")
     @ResponseBody
-    public ResponseEntity<List<String>> searchForPhrase(@PathVariable String phrase) {
-        System.out.println("SEARCH for: " + phrase);
-        List<String> documentsContainingPhraseNames = searchService.searchDocuments(phrase);
+    public ResponseEntity<List<FileInfo>> searchForPhrase(@RequestParam String phrase, @RequestParam int fromIndex, @RequestParam int resultSize) {
+        log.info("SEARCHING for: " + phrase); //todo: moze jedno rqbody zamiast rqparam?
+        List<FileInfo> documentsContainingPhraseNames = searchService.searchDocuments(phrase, fromIndex, resultSize);
         return new ResponseEntity<>(documentsContainingPhraseNames, HttpStatus.OK);
     }
 
     @GetMapping(value = "/files")
     @ResponseBody
-    public ResponseEntity<List<FileInfo>> getFiles(@RequestParam("path") String path) throws IOException {
+    public ResponseEntity<List<FileInfo>> getFiles(@RequestParam("path") String path) {
         var files = fileTreeFetcherService.fetchFileTree(path, false, null);
-
         return new ResponseEntity<>(files, HttpStatus.OK);
     }
 }

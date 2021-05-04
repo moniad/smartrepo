@@ -9,7 +9,7 @@ import java.util.List;
 @Service
 public class TranslationService {
 
-    private Translator translator;
+    private final Translator translator;
 
     @Autowired
     public TranslationService(ConfigurationFactory configurationFactory) {

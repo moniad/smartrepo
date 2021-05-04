@@ -6,9 +6,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
 import pl.edu.agh.smart_repo.common.json.EscapeCharMapper;
-import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
 import pl.edu.agh.smart_repo.common.results.Result;
 import pl.edu.agh.smart_repo.common.results.ResultType;
+import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
+import pl.edu.agh.smart_repo.services.index.IndexerService;
+import pl.edu.agh.smart_repo.services.parse.ParserService;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -17,36 +19,32 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import pl.edu.agh.smart_repo.services.index.IndexerService;
-import pl.edu.agh.smart_repo.services.parse.ParserService;
-
 @Slf4j
 @Service
 public class FileUploadService {
     private final Path storagePath;
     private final EscapeCharMapper escapeCharMapper;
+    private final ParserService parserService;
+    private final IndexerService indexerService;
 
     @Autowired
-    ParserService parserService;
-    @Autowired
-    IndexerService indexerService;
-
-    @Autowired
-    public FileUploadService(ConfigurationFactory configurationFactory) {
+    public FileUploadService(ConfigurationFactory configurationFactory, ParserService parserService, IndexerService indexerService) {
         storagePath = configurationFactory.getStoragePath();
         escapeCharMapper = new EscapeCharMapper();
+        this.parserService = parserService;
+        this.indexerService = indexerService;
     }
 
     public Result processFile(MultipartFile file) {
         //TODO: this part should be retrieved from frontend
-        String path_relative_to_storage = file.getOriginalFilename();
-        log.info("Start processing file: " + path_relative_to_storage);
+        String pathRelativeToStorage = file.getOriginalFilename();
+        log.info("Start processing file: " + pathRelativeToStorage);
 
-        Path filePath = Paths.get(storagePath.toString(), path_relative_to_storage);
+        Path filePath = Paths.get(storagePath.toString(), pathRelativeToStorage);
 
-        File new_file = new File(filePath.toUri());
+        File newFile = new File(filePath.toUri());
 
-        try (FileOutputStream fos = new FileOutputStream(new_file)) {
+        try (FileOutputStream fos = new FileOutputStream(newFile)) {
             fos.write(file.getBytes());
         } catch (FileNotFoundException e) {
             log.error("Error: file cannot be created.");
@@ -56,7 +54,7 @@ public class FileUploadService {
             return new Result(ResultType.FAILURE, e);
         }
 
-        String parsed = parserService.parse(new_file, path_relative_to_storage);
+        String parsed = parserService.parse(newFile, pathRelativeToStorage);
 
         if (parsed == null) {
             return new Result(ResultType.FAILURE, "Failed to parse file.");
@@ -67,7 +65,7 @@ public class FileUploadService {
         DocumentStructure documentStructure = new DocumentStructure();
 
         //TODO retrieve remaining arguments from frontend`s request
-        documentStructure.setName(path_relative_to_storage);
+        documentStructure.setName(pathRelativeToStorage);
         documentStructure.setContents(parsed);
 
         return indexerService.indexDocument(documentStructure);

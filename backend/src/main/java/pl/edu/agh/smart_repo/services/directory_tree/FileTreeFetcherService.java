@@ -3,7 +3,6 @@ package pl.edu.agh.smart_repo.services.directory_tree;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pl.edu.agh.smart_repo.common.file.FileInfo;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
@@ -25,12 +24,12 @@ import java.util.stream.Collectors;
 @Service
 public class FileTreeFetcherService {
 
-    @Autowired
-    FileExtensionService fileExtensionService;
+    private final FileExtensionService fileExtensionService;
     private final Path userFilesDirectoryPath;
 
-    public FileTreeFetcherService(ConfigurationFactory configurationFactory) {
+    public FileTreeFetcherService(ConfigurationFactory configurationFactory, FileExtensionService fileExtensionService) {
         this.userFilesDirectoryPath = configurationFactory.getStoragePath();
+        this.fileExtensionService = fileExtensionService;
     }
 
     public List<FileInfo> fetchFileTree(String directoryPath, boolean recursive, String[] extensions) {
@@ -41,10 +40,10 @@ public class FileTreeFetcherService {
         File[] directories = Optional.ofNullable(currentDirectory.listFiles((FileFilter) FileFilterUtils.directoryFileFilter())).orElse(new File[0]);
         files.addAll(Arrays.asList(directories));
 
-        return files.stream().map(f -> getFileInfo(f)).collect(Collectors.toList());
+        return files.stream().map(this::getFileInfo).collect(Collectors.toList());
     }
 
-    private FileInfo getFileInfo(File file){
+    private FileInfo getFileInfo(File file) {
         BasicFileAttributes attr = null;
         try {
             attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
