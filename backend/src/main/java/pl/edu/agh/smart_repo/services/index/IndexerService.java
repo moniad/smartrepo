@@ -64,6 +64,28 @@ public class IndexerService {
         return new Result(ResultType.SUCCESS);
     }
 
+    public Result deleteFileFromIndex(DocumentStructure document) {
+        //TODO: add more conditions to query maybe creation date?
+        String requestBody = createDeleteFileFromIndexRequest(document);
+        HttpRequest request = createRequest(index + "/" + "_delete_by_query", "POST", requestBody);
+
+        log.info("Delete index for document: '" + requestBody + "'");
+        var failureMessage = String.format("Cannot delete file %s from index", document.getName());
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            log.info("Index response: " + response);
+            log.info("Response body: " + response.body());
+        } catch (ConnectException e) {
+            log.error("Error while indexing document: cannot connect with ElasticSearch");
+            return new Result(ResultType.FAILURE, failureMessage);
+        } catch (InterruptedException | IOException e) {
+            log.error("Unexpected error while connecting to ElasticSearch (delete from index)");
+            return new Result(ResultType.FAILURE, failureMessage);
+        }
+
+        return new Result(ResultType.SUCCESS, String.format("File %s deleted successfully", document.getName()));
+    }
+
     public Option<List<FileInfo>> search(DocumentFields documentField, String phrase, int fromIndex, int resultSize) {
         String requestBody = createSearchRequest(phrase, documentField, fromIndex, resultSize);
         HttpRequest request = createRequest(index + "/" + "_search", "GET", requestBody);
@@ -84,7 +106,6 @@ public class IndexerService {
         return new ObjectMapper().readValue(responseBody, new TypeReference<>() {
         });
     }
-
 
     private void createAndSendInitIndexRequest(int number_of_shards, int number_of_replicas) {
         String requestBody = String.format("{\"settings\":{\"number_of_shards\":%d,\"number_of_replicas\":%d}}",
@@ -153,6 +174,17 @@ public class IndexerService {
                 documentStructure.getByDocumentField(DocumentFields.CREATION_DATE),
                 documentStructure.getByDocumentField(DocumentFields.MODIFICATION_DATE),
                 documentStructure.getByDocumentField(DocumentFields.LANGUAGE));
+    }
+
+    private String createDeleteFileFromIndexRequest(DocumentStructure documentStructure) {
+        return String.format("{\n" +
+                        "  \"query\": {\n" +
+                        "    \"match\": {\n" +
+                        "      \"name\": \"%s\"\n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "}",
+                documentStructure.getByDocumentField(DocumentFields.NAME));
     }
 
     private String createSearchRequest(String phrase, DocumentFields documentField, int fromIndex, int resultSize) {

@@ -10,7 +10,10 @@ public enum AcceptableFileExtensions {
     pptx("pptx"),
     odt("odt"),
     ods("ods"),
-    odg("odg");
+    odg("odg"),
+    zip("zip"),
+    tar("tar"),
+    gz("gz");
 
     private final String s;
 
