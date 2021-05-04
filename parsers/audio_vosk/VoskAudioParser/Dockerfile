@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /source
 
 COPY /scripts/load_models.sh /scripts/
-RUN bash -c /scripts/load_models.sh
+RUN apt update && apt install dos2unix && dos2unix /scripts/load_models.sh && bash -c /scripts/load_models.sh
 
 COPY . .
 RUN dotnet publish -c Release -o /app
