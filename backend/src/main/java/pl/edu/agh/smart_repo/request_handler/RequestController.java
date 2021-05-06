@@ -1,5 +1,6 @@
 package pl.edu.agh.smart_repo.request_handler;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +16,10 @@ import pl.edu.agh.smart_repo.services.search.SearchService;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @RestController
 public class RequestController {
 
@@ -46,13 +49,19 @@ public class RequestController {
                     HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @GetMapping("/search/{phrase}")
+    @GetMapping(value = "/search")
     @ResponseBody
-    public ResponseEntity<List<String>> searchForPhrase(@PathVariable String phrase) {
-        System.out.println("SEARCH for: " + phrase);
-        List<String> documentsContainingPhraseNames = searchService.searchDocuments(phrase);
-        return new ResponseEntity<>(documentsContainingPhraseNames, HttpStatus.OK);
+    public ResponseEntity<List<FileInfo>> searchForPhrase(@RequestParam("phrase")  String phrase,
+                                                          @RequestParam("languages") String[] languages) {
+
+        //TODO: search files with params
+//        List<FileInfo> documentsContainingPhraseNames = searchService.searchDocuments(phrase, fromIndex, resultSize);
+        FileInfo fileInfo = new FileInfo("Test file", System.currentTimeMillis(), false, 100000);
+        ArrayList<FileInfo> f = new ArrayList<>();
+        f.add(fileInfo);
+        return new ResponseEntity<List<FileInfo>>(f, HttpStatus.OK);
     }
+
 
     @GetMapping(value = "/files")
     @ResponseBody

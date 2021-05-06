@@ -2,20 +2,19 @@
   <v-app>
     <nav-bar/>
     <v-main>
-      <home/>
+      <router-view></router-view>
     </v-main>
   </v-app>
 </template>
 
 <script>
 import NavBar from "@/components/navigation/NavBar";
-import Home from "@/views/Home";
 
 export default {
   name: 'App',
 
   components: {
-    NavBar,Home
+    NavBar
   },
 
   data: () => ({
