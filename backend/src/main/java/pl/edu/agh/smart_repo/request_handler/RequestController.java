@@ -32,11 +32,11 @@ public class RequestController {
 
     @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
     @ResponseBody
-    public ResponseEntity<String> uploadFile(@RequestParam("files") MultipartFile file) throws IOException {
+    public ResponseEntity<String> uploadFile(@RequestParam("files") MultipartFile file, @RequestParam("path") String path) throws IOException {
 
         //TODO file extension could be checked here, change fileService to accept MultiparFile
 
-        Result result = fileUploadService.processFile(file);
+        Result result = fileUploadService.processFile(file, path);
 
         if (result.isSuccess())
             return new ResponseEntity<>("added file: " + file.getOriginalFilename(), HttpStatus.OK);
