@@ -33,7 +33,7 @@ const repoModule = {
     },
     actions: {
         uploadFiles(
-            { commit, dispatch, rootGetters, getters, rootState, state }, file
+            { commit, dispatch, rootGetters, getters, rootState, state }, {file, path}
         ) {
             axios.post("http://localhost:7777/upload", file,
                 {
@@ -46,7 +46,7 @@ const repoModule = {
                     if (response.status === 200) {
                         console.log("Response: " + response.data)
                         commit('FILES_UPLOADED')
-                        dispatch('loadFiles');
+                        dispatch('loadFiles',path);
                     } else {
                         console.log("ERROR: (" + response.status + ")")
                     }

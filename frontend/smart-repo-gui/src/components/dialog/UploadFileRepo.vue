@@ -69,6 +69,7 @@ export default {
       active: false,
       fileList: [],
       title: 'Upload File',
+      path: ''
     };
   },
   components: {
@@ -81,13 +82,9 @@ export default {
     },
     submitFiles(){
       let formData = new FormData();
-      // for(let i = 0; i < this.fileList.length; i++ ){
-      //   let file = this.fileList[i];
-      //   formData.append('files[' + i + ']', file);
-      // }
       formData.append('files',this.fileList[0])
-      console.log(formData.get('files'))
-      this.uploadFiles(formData)
+      formData.append('path', this.path);
+      this.uploadFiles({file : formData, path: this.path})
       this.cancel()
     },
     onChange() {
@@ -108,6 +105,12 @@ export default {
       this.fileList.push(...event.dataTransfer.files)
     }
   },
+  watch:{
+
+    $route(to,from){
+      this.path = to.path
+    },
+  }
 }
 </script>
 
