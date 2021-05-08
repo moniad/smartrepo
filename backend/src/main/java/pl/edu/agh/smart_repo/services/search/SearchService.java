@@ -3,8 +3,8 @@ package pl.edu.agh.smart_repo.services.search;
 import io.vavr.control.Option;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import pl.edu.agh.smart_repo.common.document_fields.DocumentFields;
 import pl.edu.agh.smart_repo.common.file.FileInfo;
+import pl.edu.agh.smart_repo.common.request.SearchRequest;
 import pl.edu.agh.smart_repo.services.index.IndexerService;
 import pl.edu.agh.smart_repo.services.translation.Language;
 import pl.edu.agh.smart_repo.services.translation.TranslationService;
@@ -32,16 +32,18 @@ public class SearchService {
         this.translationService = translationService;
     }
 
-    public List<FileInfo> searchDocuments(String phrase, int fromIndex, int resultSize) {
-        return searchDocuments(phrase, defaultLanguagesToSearch, fromIndex, resultSize);
+    public List<FileInfo> searchDocuments(SearchRequest searchRequest) {
+        if (searchRequest.getLanguagesToSearchIn() == null) {
+            return searchDocuments(searchRequest.getPhrase(), defaultLanguagesToSearch);
+        }
+        return searchDocuments(searchRequest.getPhrase(), searchRequest.getLanguagesToSearchIn());
     }
 
-    public List<FileInfo> searchDocuments(String phrase, List<Language> languagesToSearch, int fromIndex, int resultSize) {
+    public List<FileInfo> searchDocuments(String phrase, List<Language> languagesToSearch) {
         log.info("Searching for: " + phrase + " in languages: " + languagesToSearch.toString() + "...");
 
-        List<String> translatedPhrases = translationService.translate(phrase, Language.ENGLISH, languagesToSearch);
-        return translatedPhrases.stream().map(phraseInSomeLanguage ->
-                indexerService.search(DocumentFields.CONTENTS, phraseInSomeLanguage, fromIndex, resultSize))
+        List<String> translatedPhrases = Arrays.asList(phrase, "engine");//translationService.translate(phrase, Language.ENGLISH, languagesToSearch);todo
+        return translatedPhrases.stream().map(indexerService::search)
                 .filter(result -> !result.isEmpty())
                 .map(Option::get)
                 .flatMap(Collection::stream)

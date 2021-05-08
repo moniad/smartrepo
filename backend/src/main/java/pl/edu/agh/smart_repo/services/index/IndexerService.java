@@ -5,15 +5,25 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.control.Option;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpHost;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentFields;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
 import pl.edu.agh.smart_repo.common.file.FileInfo;
-import pl.edu.agh.smart_repo.common.results.Result;
-import pl.edu.agh.smart_repo.common.results.ResultType;
+import pl.edu.agh.smart_repo.common.response.Result;
+import pl.edu.agh.smart_repo.common.response.ResultType;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
+import pl.edu.agh.smart_repo.services.directory_tree.util.FileInfoService;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -21,22 +31,32 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class IndexerService {
-
     private final String index;
     private final HttpClient client;
+//    private final RestHighLevelClient restHighLevelClient;
+    private final FileInfoService fileInfoService;
 
     @Autowired
     public IndexerService(ConfigurationFactory configurationFactory,
+                          FileInfoService fileInfoService,
                           @Value("${elastic.index.number_of_shards}") int number_of_shards,
                           @Value("${elastic.index.number_of_replicas}") int number_of_replicas) {
+        this.fileInfoService = fileInfoService;
         log.info("Init indexer service");
 
         client = HttpClient.newHttpClient();
+//        restHighLevelClient = new RestHighLevelClient(
+//                RestClient.builder(
+//                        new HttpHost("localhost", 9200, "http"),
+//                        new HttpHost("localhost", 9201, "http")));
         index = configurationFactory.getElasticSearchAddress() + "/" + configurationFactory.getIndex();
 
         createAndSendInitIndexRequest(number_of_shards, number_of_replicas);
@@ -86,24 +106,55 @@ public class IndexerService {
         return new Result(ResultType.SUCCESS, String.format("File %s deleted successfully", document.getName()));
     }
 
-    public Option<List<FileInfo>> search(DocumentFields documentField, String phrase, int fromIndex, int resultSize) {
-        String requestBody = createSearchRequest(phrase, documentField, fromIndex, resultSize);
+    public Option<List<FileInfo>> search(String phrase) {
+        String requestBody = createSearchRequest(phrase);
         HttpRequest request = createRequest(index + "/" + "_search", "GET", requestBody);
 
         log.info("Searching index for: '" + requestBody + "'");
         Option<List<FileInfo>> foundFiles = Option.none();
 
         try {
+            SearchRequest searchRequest = new SearchRequest();
+            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+            searchSourceBuilder.query(QueryBuilders.matchQuery("contents", phrase));
+            searchRequest.source(searchSourceBuilder);
+//            SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT); //todo: doesn't work
+
+//            return Option.of(convertToFileInfo(searchResponse.getHits().getHits()));
+
+
             HttpResponse<String> stringHttpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
             foundFiles = Option.of(mapResponseToFileInfo(stringHttpResponse.body()));
-        } catch (IOException | InterruptedException e) {
+        } catch (JsonProcessingException e) {
+            log.warn("Phrase: " + phrase + " not found in any file");
+        } catch (IOException e) {
             log.error("Error while searching index for phrase: " + phrase);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
         return foundFiles;
     }
 
+    private List<FileInfo> convertToFileInfo(SearchHit[] hits) {
+        return Arrays.stream(hits).map(hit -> {
+            Map<String, Object> stringObjectMap = hit.getSourceAsMap();
+            return fileInfoService.getFileByName(stringObjectMap.get("name").toString());
+        }).collect(Collectors.toList());
+    }
+
+
     private List<FileInfo> mapResponseToFileInfo(String responseBody) throws JsonProcessingException {
-        return new ObjectMapper().readValue(responseBody, new TypeReference<>() {
+        return new ObjectMapper().readValue(responseBody, new TypeReference<>() { //todo: parse this format (hits array): {
+//                        "hits" : [
+//                {
+//                    "_index" : "myindex",
+//                        "_type" : "_doc",
+//                        "_id" : "fhsDBHkBXCVcTa-jRwpc",
+//                        "_score" : 0.2915784,
+//                        "_source" : {
+//                    "name" : "ModelingContinuousSecurity.pdf",
+//                            "path" : "null",
+//                            "contents" : "Computers & Security 97 (2020) 101967
         });
     }
 
@@ -163,7 +214,7 @@ public class IndexerService {
                         "  \"path\": \"%s\",\n" +
                         "  \"contents\": \"%s\",\n" +
                         "  \"keywords\": \"%s\",\n" +
-                        "  \"create_date\": \"%s\",\n" +
+                        "  \"creation_date\": \"%s\",\n" +
                         "  \"modification_date\": \"%s\",\n" +
                         "  \"language\": \"%s\"\n" +
                         "}",
@@ -187,21 +238,19 @@ public class IndexerService {
                 documentStructure.getByDocumentField(DocumentFields.NAME));
     }
 
-    private String createSearchRequest(String phrase, DocumentFields documentField, int fromIndex, int resultSize) {
+    private String createSearchRequest(String phrase) {
         return String.format("{\n" +
                 "  \"query\": {\n" +
-                "    \"match\": {\n" +
-                "      \"content\": \"%s\"" +
-                "      }\n" +
-                "   }\n" +
-                "}, \"_source\": \"%s\"", documentField.toString(), phrase) + getPaginationPart(fromIndex, resultSize);
-    }
-
-    private String getPaginationPart(int fromIndex, int size) {
-        return String.format("\n," +
-                        "\"from\": \"%s\",\n" +
-                        "\"size\": \"%s\"",
-                fromIndex,
-                size);
+                "    \"bool\": {\n" +
+                "      \"must\": [\n" +
+                "        {\n" +
+                "          \"match\": {\n" +
+                "            \"contents\": \"%s\"\n" +
+                "          }\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  }\n" +
+                "}", phrase);
     }
 }

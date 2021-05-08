@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
 import pl.edu.agh.smart_repo.common.json.EscapeCharMapper;
-import pl.edu.agh.smart_repo.common.results.Result;
-import pl.edu.agh.smart_repo.common.results.ResultType;
+import pl.edu.agh.smart_repo.common.response.Result;
+import pl.edu.agh.smart_repo.common.response.ResultType;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
 import pl.edu.agh.smart_repo.services.index.IndexerService;
 import pl.edu.agh.smart_repo.services.parse.ParserService;
@@ -38,7 +38,7 @@ public class FileUploadService {
     public Result processFile(MultipartFile file) {
         //TODO: this part should be retrieved from frontend
         String pathRelativeToStorage = file.getOriginalFilename();
-        log.info("Start processing file: " + pathRelativeToStorage);
+        log.info("Started processing file: " + pathRelativeToStorage);
 
         Path filePath = Paths.get(storagePath.toString(), pathRelativeToStorage);
 

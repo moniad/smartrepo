@@ -10,7 +10,7 @@
                   md="4"
               >
                 <v-text-field
-                    v-model="firstname"
+                    v-model="title"
                     label="Title"
                     required
                 ></v-text-field>
@@ -21,7 +21,7 @@
                   md="4"
               >
                 <v-text-field
-                    v-model="lastname"
+                    v-model="extension"
                     label="Extension"
                     required
                 ></v-text-field>
@@ -32,7 +32,7 @@
                   md="4"
               >
                 <v-text-field
-                    v-model="email"
+                    v-model="author"
                     label="Author"
                     required
                 ></v-text-field>
@@ -59,9 +59,9 @@ export default {
   data:() => ({
     data: () => ({
       valid: false,
-      firstname: '',
-      lastname: '',
-      email: '',
+      title: '',
+      extension: '',
+      author: '',
     }),
   })
 }

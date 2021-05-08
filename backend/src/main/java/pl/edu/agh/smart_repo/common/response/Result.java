@@ -1,4 +1,4 @@
-package pl.edu.agh.smart_repo.common.results;
+package pl.edu.agh.smart_repo.common.response;
 
 public class Result {
     private final ResultType type;

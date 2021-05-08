@@ -20,8 +20,7 @@ public class FileExtensionService {
 
     private final TikaConfig config = TikaConfig.getDefaultConfig();
 
-    public boolean hasAcceptableExtension(File file) throws FileNotFoundException
-    {
+    public boolean hasAcceptableExtension(File file) {
         String extension = getExtension(file);
         return EnumUtils.isValidEnum(AcceptableFileExtensions.class, extension);
     }
