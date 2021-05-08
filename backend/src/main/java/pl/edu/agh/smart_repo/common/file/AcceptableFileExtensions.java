@@ -13,7 +13,8 @@ public enum AcceptableFileExtensions {
     odg("odg"),
     zip("zip"),
     tar("tar"),
-    gz("gz");
+    gz("gz"),
+    wav("wav");
 
     private final String s;
 

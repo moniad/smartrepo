@@ -2,31 +2,16 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <Platforms>AnyCPU;x86</Platforms>
   </PropertyGroup>
 
-	<ItemGroup>
+  <ItemGroup>
     <PackageReference Include="log4net" Version="2.0.12" />
-    <PackageReference Include="NAudio" Version="2.0.0" />
+    <PackageReference Include="NAudio" Version="1.10.0" />
     <PackageReference Include="Optional" Version="4.0.0" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.2.1" />
     <PackageReference Include="Vosk" Version="0.3.21" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Properties\Resources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
@@ -35,16 +20,12 @@
     </None>
   </ItemGroup>
 
+  <Target Name="CopyFiles" AfterTargets="Compile">
+    <ItemGroup>
+      <MySourceFiles Include="%(ProjectDir)models\**\*.*" />
+    </ItemGroup>
 
-	<Target Name="CopyFiles" AfterTargets="Compile">
-		<ItemGroup>
-			<MySourceFiles Include="%(ProjectDir)models\**\*.*"/>
-		</ItemGroup>
-
-		<Copy
-			SourceFiles="@(MySourceFiles)"
-			DestinationFiles="@(MySourceFiles->'$(OutDir)\models\%(RecursiveDir)%(Filename)%(Extension)')"
-			SkipUnchangedFiles="true"/>
-	</Target>
+    <Copy SourceFiles="@(MySourceFiles)" DestinationFiles="@(MySourceFiles->'$(OutDir)\models\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>
