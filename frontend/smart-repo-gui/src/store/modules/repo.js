@@ -1,5 +1,7 @@
 /* eslint-disable no-unused-vars */
 import axios from "axios";
+import qs from "qs";
+
 const defaultState = () => {
     return {
         files: [],
@@ -90,7 +92,23 @@ const repoModule = {
                 .catch(error =>{
                     console.error("An error occurred during creating directory!\n", error)
                 })
-        }
+        },
+        search({ commit, dispatch, rootGetters, getters, rootState, state }, { phrase, languages }){
+            axios.get("http://localhost:7777/search", {params:{
+                    phrase:phrase?phrase:'',
+                    languages:languages?languages:[],
+                },
+                paramsSerializer: params => {
+                    return qs.stringify(params, { arrayFormat: 'comma', encode: false })
+                  }
+                })
+                .then(async response =>{
+                    commit('UPDATE_FILES',response.data)
+                })
+                .catch(error =>{
+                    console.error("An error occurred during receiving response!\n", error)
+                })
+        },
     },
     getters:{
 
