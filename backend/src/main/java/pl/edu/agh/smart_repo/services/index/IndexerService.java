@@ -1,5 +1,6 @@
 package pl.edu.agh.smart_repo.services.index;
 
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,6 +11,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -41,7 +43,7 @@ import java.util.stream.Collectors;
 public class IndexerService {
     private final String index;
     private final HttpClient client;
-//    private final RestHighLevelClient restHighLevelClient;
+    private final RestHighLevelClient restHighLevelClient;
     private final FileInfoService fileInfoService;
 
     @Autowired
@@ -53,10 +55,11 @@ public class IndexerService {
         log.info("Init indexer service");
 
         client = HttpClient.newHttpClient();
-//        restHighLevelClient = new RestHighLevelClient(
-//                RestClient.builder(
-//                        new HttpHost("localhost", 9200, "http"),
-//                        new HttpHost("localhost", 9201, "http")));
+
+        RestClientBuilder builder = RestClient.builder(
+                new HttpHost("localhost", 9200, "http")
+        );
+        restHighLevelClient = new RestHighLevelClient(builder);
         index = configurationFactory.getElasticSearchAddress() + "/" + configurationFactory.getIndex();
 
         createAndSendInitIndexRequest(number_of_shards, number_of_replicas);
@@ -107,30 +110,34 @@ public class IndexerService {
     }
 
     public Option<List<FileInfo>> search(String phrase) {
-        String requestBody = createSearchRequest(phrase);
-        HttpRequest request = createRequest(index + "/" + "_search", "GET", requestBody);
+//        String requestBody = createSearchRequest(phrase);
+//        HttpRequest request = createRequest(index + "/" + "_search", "GET", requestBody);
 
-        log.info("Searching index for: '" + requestBody + "'");
+//        log.info("Searching index for: '" + requestBody + "'");
         Option<List<FileInfo>> foundFiles = Option.none();
 
         try {
-            SearchRequest searchRequest = new SearchRequest();
+            SearchRequest searchRequest = new SearchRequest(index);
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-            searchSourceBuilder.query(QueryBuilders.matchQuery("contents", phrase));
+            searchSourceBuilder.query(QueryBuilders.termQuery("contents", phrase));
             searchRequest.source(searchSourceBuilder);
-//            SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT); //todo: doesn't work
-
-//            return Option.of(convertToFileInfo(searchResponse.getHits().getHits()));
+            SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT); //todo: doesn't work
 
 
-            HttpResponse<String> stringHttpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            foundFiles = Option.of(mapResponseToFileInfo(stringHttpResponse.body()));
+//            HttpResponse<String> stringHttpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+//            foundFiles = Option.of(mapResponseToFileInfo(stringHttpResponse.body()));
+            SearchHit[] searchHits = searchResponse.getHits().getHits();
+            foundFiles = Option.of(convertToFileInfo(searchHits));
+            List<FileInfo> results = Arrays.stream(searchHits)
+                    .map(hit -> JSON.parseObject(hit.getSourceAsString(), FileInfo.class))
+                    .collect(Collectors.toList());
+            return Option.of(results);
         } catch (JsonProcessingException e) {
             log.warn("Phrase: " + phrase + " not found in any file");
         } catch (IOException e) {
             log.error("Error while searching index for phrase: " + phrase);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
         }
         return foundFiles;
     }

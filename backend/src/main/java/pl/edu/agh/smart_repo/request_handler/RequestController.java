@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import pl.edu.agh.smart_repo.common.file.FileInfo;
+import pl.edu.agh.smart_repo.common.request.CreateDirectoryRequest;
+import pl.edu.agh.smart_repo.common.request.SearchRequest;
 import pl.edu.agh.smart_repo.common.response.Result;
 import pl.edu.agh.smart_repo.services.directory_tree.FileManagerService;
 import pl.edu.agh.smart_repo.services.directory_tree.FileTreeFetcherService;
