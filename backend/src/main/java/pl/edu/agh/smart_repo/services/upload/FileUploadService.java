@@ -37,12 +37,12 @@ public class FileUploadService {
         escapeCharMapper = new EscapeCharMapper();
     }
 
-    public Result processFile(MultipartFile file) {
+    public Result processFile(MultipartFile file, String path) {
         //TODO: this part should be retrieved from frontend
-        String path_relative_to_storage = file.getOriginalFilename();
-        log.info("Start processing file: " + path_relative_to_storage);
+        String fileName = file.getOriginalFilename();
+        log.info("Start processing file: " + fileName);
 
-        Path filePath = Paths.get(storagePath.toString(), path_relative_to_storage);
+        Path filePath = Paths.get(storagePath.toString(), path, fileName);
 
         File new_file = new File(filePath.toUri());
 
@@ -56,7 +56,7 @@ public class FileUploadService {
             return new Result(ResultType.FAILURE, e);
         }
 
-        String parsed = parserService.parse(new_file, path_relative_to_storage);
+        String parsed = parserService.parse(new_file, fileName);
 
         if (parsed == null) {
             return new Result(ResultType.FAILURE, "Failed to parse file.");
@@ -67,7 +67,8 @@ public class FileUploadService {
         DocumentStructure documentStructure = new DocumentStructure();
 
         //TODO retrieve remaining arguments from frontend`s request
-        documentStructure.setName(path_relative_to_storage);
+        documentStructure.setName(fileName);
+        documentStructure.setPath(filePath.toString());
         documentStructure.setContents(parsed);
 
         return indexerService.indexDocument(documentStructure);
