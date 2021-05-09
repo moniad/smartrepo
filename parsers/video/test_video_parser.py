@@ -7,6 +7,7 @@ import time
 
 
 class VideoParserTestCase(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
         cls.path_input = sys.argv[1]
@@ -27,7 +28,7 @@ class VideoParserTestCase(unittest.TestCase):
                                   properties=pika.BasicProperties(
                                       delivery_mode=2,  # make message persistent
                                   ))
-        time.sleep(15)
+        time.sleep(25)
 
     @classmethod
     def tearDownClass(cls):
