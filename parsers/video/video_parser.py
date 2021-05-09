@@ -6,6 +6,10 @@ import ntpath
 import pika
 
 
+audio_channel = None
+frame_channel = None
+
+
 class VideoParser:
     def __init__(self, video_path):
         self.pathIn = video_path
@@ -17,6 +21,7 @@ class VideoParser:
         self.fileName = str(ntpath.basename(video_path))
         self.framesFolder = os.path.join(self.pathOut, self.fileName, "frames")
         self.audioFolder = os.path.join(self.pathOut, self.fileName, "audio")
+        self.audioPath = ""
 
     def create_directories(self):
         # Creates temporary output directories for audio and frames
@@ -44,7 +49,8 @@ class VideoParser:
         # Creates a moviepy clip and extracts audio
         video = mpe.VideoFileClip(self.pathIn)
         audio = video.audio
-        audio.write_audiofile(os.path.join(self.audioFolder, "audio.mp3"))
+        self.audioPath = os.path.join(self.audioFolder, "audio.wav")
+        audio.write_audiofile(self.audioPath)
 
     def parse(self):
         # Checks if the file is a video file and invokes frame and audio extraction
@@ -63,6 +69,12 @@ def callback(ch, method, properties, body):
     parser.parse()
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
+    audio_channel.basic_publish(exchange='wav', routing_key='', body=parser.audioPath)
+    # TODO add when image parser is available
+    # for frame in os.listdir(parser.framesFolder):
+    #     frame_path = os.path.join(parser.framesFolder, frame)
+    #     frame_channel.basic_publish(exchange='jpg', routing_key='', body=frame_path)
+
 
 if __name__ == "__main__":
 
@@ -70,13 +82,16 @@ if __name__ == "__main__":
 
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(host=host))
-    channel = connection.channel()
+    video_channel = connection.channel()
+    audio_channel = connection.channel()
+    frame_channel = connection.channel()
 
-    channel.queue_declare(queue='video', durable=True)
+    video_channel.queue_declare(queue='video', durable=True)
+    audio_channel.queue_declare(queue='wav', durable=True)
+    frame_channel.queue_declare(queue='jpg', durable=True)
 
-    channel.basic_qos(prefetch_count=1)
-    channel.basic_consume(queue='video', on_message_callback=callback)
+    video_channel.basic_qos(prefetch_count=1)
+    video_channel.basic_consume(queue='video', on_message_callback=callback)
 
     print(' [*] Waiting for messages.')
-    channel.start_consuming()
-
+    video_channel.start_consuming()
