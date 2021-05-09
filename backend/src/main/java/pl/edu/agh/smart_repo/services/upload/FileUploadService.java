@@ -35,16 +35,16 @@ public class FileUploadService {
         this.indexerService = indexerService;
     }
 
-    public Result processFile(MultipartFile file) {
+    public Result processFile(MultipartFile file, String path) {
         //TODO: this part should be retrieved from frontend
-        String pathRelativeToStorage = file.getOriginalFilename();
-        log.info("Started processing file: " + pathRelativeToStorage);
+        String fileName = file.getOriginalFilename();
+        log.info("Started processing file: " + fileName);
 
-        Path filePath = Paths.get(storagePath.toString(), pathRelativeToStorage);
+        Path filePath = Paths.get(storagePath.toString(), path, fileName);
 
-        File newFile = new File(filePath.toUri());
+        File new_file = new File(filePath.toUri());
 
-        try (FileOutputStream fos = new FileOutputStream(newFile)) {
+        try (FileOutputStream fos = new FileOutputStream(new_file)) {
             fos.write(file.getBytes());
         } catch (FileNotFoundException e) {
             log.error("Error: file cannot be created.");
@@ -54,7 +54,7 @@ public class FileUploadService {
             return new Result(ResultType.FAILURE, e);
         }
 
-        String parsed = parserService.parse(newFile, pathRelativeToStorage);
+        String parsed = parserService.parse(new_file, fileName);
 
         if (parsed == null) {
             return new Result(ResultType.FAILURE, "Failed to parse file.");
@@ -65,7 +65,8 @@ public class FileUploadService {
         DocumentStructure documentStructure = new DocumentStructure();
 
         //TODO retrieve remaining arguments from frontend`s request
-        documentStructure.setName(pathRelativeToStorage);
+        documentStructure.setName(fileName);
+        documentStructure.setPath(filePath.toString());
         documentStructure.setContents(parsed);
 
         return indexerService.indexDocument(documentStructure);

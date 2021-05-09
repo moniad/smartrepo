@@ -6,14 +6,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import pl.edu.agh.smart_repo.common.file.FileInfo;
-import pl.edu.agh.smart_repo.common.request.CreateDirectoryRequest;
-import pl.edu.agh.smart_repo.common.request.SearchRequest;
 import pl.edu.agh.smart_repo.common.response.Result;
 import pl.edu.agh.smart_repo.services.directory_tree.FileManagerService;
 import pl.edu.agh.smart_repo.services.directory_tree.FileTreeFetcherService;
 import pl.edu.agh.smart_repo.services.search.SearchService;
 import pl.edu.agh.smart_repo.services.upload.FileUploadService;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -35,11 +34,11 @@ public class RequestController {
 
     @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
     @ResponseBody
-    public ResponseEntity<String> uploadFile(@RequestParam("files") MultipartFile file) {
+    public ResponseEntity<String> uploadFile(@RequestParam("files") MultipartFile file, @RequestParam("path") String path) {
 
         //TODO file extension could be checked here, change fileService to accept MultipartFile
 
-        Result result = fileUploadService.processFile(file);
+        Result result = fileUploadService.processFile(file, path);
 
         if (result.isSuccess())
             return new ResponseEntity<>("added file: " + file.getOriginalFilename(), HttpStatus.OK);
@@ -55,6 +54,18 @@ public class RequestController {
         log.info("SEARCHING for: " + searchRequest.getPhrase());
         List<FileInfo> documentsContainingPhraseNames = searchService.searchDocuments(searchRequest);
         return new ResponseEntity<>(documentsContainingPhraseNames, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/search")
+    @ResponseBody
+    public ResponseEntity<List<FileInfo>> searchForPhrase(@RequestParam("phrase") String phrase,
+                                                          @RequestParam("languages") String[] languages) {
+        //TODO: search files with params
+//        List<FileInfo> documentsContainingPhraseNames = searchService.searchDocuments(phrase, fromIndex, resultSize);
+        FileInfo fileInfo = new FileInfo("Test file", System.currentTimeMillis(), false, 100000);
+        ArrayList<FileInfo> f = new ArrayList<>();
+        f.add(fileInfo);
+        return new ResponseEntity<>(f, HttpStatus.OK);
     }
 
     @GetMapping(value = "/files")

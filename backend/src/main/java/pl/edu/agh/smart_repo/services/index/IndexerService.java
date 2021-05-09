@@ -231,11 +231,11 @@ public class IndexerService {
         return String.format("{\n" +
                         "  \"query\": {\n" +
                         "    \"match\": {\n" +
-                        "      \"name\": \"%s\"\n" +
+                        "      \"path\": \"%s\"\n" +
                         "    }\n" +
                         "  }\n" +
                         "}",
-                documentStructure.getByDocumentField(DocumentFields.NAME));
+                documentStructure.getByDocumentField(DocumentFields.PATH));
     }
 
     private String createSearchRequest(String phrase) {
