@@ -48,7 +48,7 @@ public class FileManagerService {
             Files.delete(resultPath);
 
             var document = new DocumentStructure();
-            document.setPath(path);
+            document.setPath(resultPath.toString());
             result = indexerService.deleteFileFromIndex(document);
 
         } catch (NoSuchFileException e) {

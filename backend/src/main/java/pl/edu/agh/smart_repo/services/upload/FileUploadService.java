@@ -54,7 +54,7 @@ public class FileUploadService {
             return new Result(ResultType.FAILURE, e);
         }
 
-        String parsed = parserService.parse(new_file, filePath.toString());
+        String parsed = parserService.parse(new_file, Paths.get(path, fileName).toString());
 
         if (parsed == null) {
             return new Result(ResultType.FAILURE, "Failed to parse file.");
