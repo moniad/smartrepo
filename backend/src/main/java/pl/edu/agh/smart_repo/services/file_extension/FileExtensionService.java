@@ -18,30 +18,25 @@ import java.io.InputStream;
 @Service
 public class FileExtensionService {
 
-    private TikaConfig config = TikaConfig.getDefaultConfig();
+    private final TikaConfig config = TikaConfig.getDefaultConfig();
 
-    public boolean hasAcceptableExtension(File file) throws FileNotFoundException
-    {
+    public boolean hasAcceptableExtension(File file) {
         String extension = getExtension(file);
         return EnumUtils.isValidEnum(AcceptableFileExtensions.class, extension);
     }
 
-    public String getExtension(File file)
-    {
+    public String getExtension(File file) {
         String extension = null;
         try {
             Metadata metadata = new Metadata();
             InputStream stream = TikaInputStream.get(file, metadata);
-            MediaType mediaType = null;
-
-            mediaType = config.getMimeRepository().detect(stream, metadata);
+            MediaType mediaType = config.getMimeRepository().detect(stream, metadata);
             MimeType mimeType = config.getMimeRepository().forName(mediaType.toString());
             extension = mimeType.getExtension().split("\\.")[1];
 
-        } catch (FileNotFoundException e){
+        } catch (FileNotFoundException e) {
             log.error("Cannot find file: " + file.getName());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("Cannot get file extension. File: {}", file.getName());
             log.error(e.getMessage());
         }

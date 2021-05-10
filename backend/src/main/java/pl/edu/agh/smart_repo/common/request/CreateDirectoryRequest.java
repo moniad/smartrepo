@@ -1,11 +1,11 @@
-package pl.edu.agh.smart_repo.common.dto;
+package pl.edu.agh.smart_repo.common.request;
 
 import lombok.*;
 
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateDirectoryDto {
+public class CreateDirectoryRequest {
     @Getter
     @Setter
     private String path;

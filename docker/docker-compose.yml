@@ -23,7 +23,6 @@ services:
     image: elasticsearch:7.6.0
     ports:
       - 9200:9200
-      - 9300:9300
     environment:
       discovery.type: single-node
       xpack.license.self_generated.type: trial
@@ -62,6 +61,9 @@ services:
     image: smart-repo-backend:latest
     ports:
       - 7777:7777
+      - 5005:5005
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     networks:
       rabbit-network:
       elk:
