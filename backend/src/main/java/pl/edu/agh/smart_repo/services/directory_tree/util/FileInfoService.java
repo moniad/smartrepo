@@ -25,22 +25,26 @@ public class FileInfoService {
     }
 
     public FileInfo getFileInfo(File file) {
-        BasicFileAttributes attr = null;
+        FileInfo fileInfo = null;
         try {
-            attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+            BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+            fileInfo = new FileInfo(file.getName(), attr.creationTime().toMillis(), file.isDirectory(), file.length());
+            if (!file.isDirectory()) {
+                setExtension(file, fileInfo);
+            }
         } catch (IOException e) {
             log.error("Error while getting additional file data from " + file);
-        }
-        var fileInfo = new FileInfo(file.getName(), attr.creationTime().toMillis(), file.isDirectory(), file.length());
-        if (!file.isDirectory()) {
-            var extension = fileExtensionService.getExtension(file);
-            fileInfo.setExtension(extension);
         }
         return fileInfo;
     }
 
     public FileInfo getFileByName(String name) { //todo: change it to getFileByPath when path is indexed properly
-        String resultPath = Paths.get(userFilesDirectoryPath.toString(), name).toString(); //todo: directory path
+        String resultPath = Paths.get(userFilesDirectoryPath.toString(), name).toString(); //todo: take directory path into account
         return getFileInfo(new File(resultPath));
+    }
+
+    private void setExtension(File file, FileInfo fileInfo) {
+        var extension = fileExtensionService.getExtension(file);
+        fileInfo.setExtension(extension);
     }
 }

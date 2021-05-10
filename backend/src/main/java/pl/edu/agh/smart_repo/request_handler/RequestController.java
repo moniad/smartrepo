@@ -14,8 +14,8 @@ import pl.edu.agh.smart_repo.services.directory_tree.FileTreeFetcherService;
 import pl.edu.agh.smart_repo.services.search.SearchService;
 import pl.edu.agh.smart_repo.services.upload.FileUploadService;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -53,21 +53,11 @@ public class RequestController {
     @PostMapping("/search")
     @ResponseBody
     public ResponseEntity<List<FileInfo>> searchForPhrase(@RequestBody SearchRequest searchRequest) {
-        log.info("SEARCHING for: " + searchRequest.getPhrase());
-        List<FileInfo> documentsContainingPhraseNames = searchService.searchDocuments(searchRequest);
+        List<FileInfo> documentsContainingPhraseNames = searchService.searchDocuments(searchRequest)
+                .stream()
+                .distinct()
+                .collect(Collectors.toList());
         return new ResponseEntity<>(documentsContainingPhraseNames, HttpStatus.OK);
-    }
-
-    @GetMapping(value = "/search")
-    @ResponseBody
-    public ResponseEntity<List<FileInfo>> searchForPhrase(@RequestParam("phrase") String phrase,
-                                                          @RequestParam("languages") String[] languages) {
-        //TODO: search files with params
-//        List<FileInfo> documentsContainingPhraseNames = searchService.searchDocuments(phrase, fromIndex, resultSize);
-        FileInfo fileInfo = new FileInfo("Test file", System.currentTimeMillis(), false, 100000);
-        ArrayList<FileInfo> f = new ArrayList<>();
-        f.add(fileInfo);
-        return new ResponseEntity<>(f, HttpStatus.OK);
     }
 
     @GetMapping(value = "/files")

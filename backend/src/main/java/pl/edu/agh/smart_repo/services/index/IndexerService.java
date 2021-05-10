@@ -1,23 +1,19 @@
 package pl.edu.agh.smart_repo.services.index;
 
 import com.alibaba.fastjson.JSON;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.control.Option;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpHost;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.elasticsearch.client.ClientConfiguration;
+import org.springframework.data.elasticsearch.client.RestClients;
 import org.springframework.stereotype.Service;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentFields;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
@@ -35,7 +31,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -56,10 +51,12 @@ public class IndexerService {
 
         client = HttpClient.newHttpClient();
 
-        RestClientBuilder builder = RestClient.builder(
-                new HttpHost("localhost", 9200, "http")
-        );
-        restHighLevelClient = new RestHighLevelClient(builder);
+        ClientConfiguration clientConfiguration = ClientConfiguration.builder()
+                .connectedTo("elasticsearch:9200")
+                .build();
+        restHighLevelClient = RestClients.create(clientConfiguration)
+                .rest();
+
         index = configurationFactory.getElasticSearchAddress() + "/" + configurationFactory.getIndex();
 
         createAndSendInitIndexRequest(number_of_shards, number_of_replicas);
@@ -110,59 +107,28 @@ public class IndexerService {
     }
 
     public Option<List<FileInfo>> search(String phrase) {
-//        String requestBody = createSearchRequest(phrase);
-//        HttpRequest request = createRequest(index + "/" + "_search", "GET", requestBody);
-
-//        log.info("Searching index for: '" + requestBody + "'");
         Option<List<FileInfo>> foundFiles = Option.none();
 
         try {
-            SearchRequest searchRequest = new SearchRequest(index);
+            SearchRequest searchRequest = new SearchRequest("myindex"); //todo
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-            searchSourceBuilder.query(QueryBuilders.termQuery("contents", phrase));
+            searchSourceBuilder.query(QueryBuilders.matchAllQuery()); //"contents", phrase)); //todo
             searchRequest.source(searchSourceBuilder);
-            SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT); //todo: doesn't work
 
+            log.info("Search query: '" + searchRequest.source().toString() + "'");
 
-//            HttpResponse<String> stringHttpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-//            foundFiles = Option.of(mapResponseToFileInfo(stringHttpResponse.body()));
+            SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+
             SearchHit[] searchHits = searchResponse.getHits().getHits();
-            foundFiles = Option.of(convertToFileInfo(searchHits));
             List<FileInfo> results = Arrays.stream(searchHits)
                     .map(hit -> JSON.parseObject(hit.getSourceAsString(), FileInfo.class))
+                    .map(fileInfo -> fileInfoService.getFileByName(fileInfo.getName()))
                     .collect(Collectors.toList());
             return Option.of(results);
-        } catch (JsonProcessingException e) {
-            log.warn("Phrase: " + phrase + " not found in any file");
         } catch (IOException e) {
             log.error("Error while searching index for phrase: " + phrase);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
         }
         return foundFiles;
-    }
-
-    private List<FileInfo> convertToFileInfo(SearchHit[] hits) {
-        return Arrays.stream(hits).map(hit -> {
-            Map<String, Object> stringObjectMap = hit.getSourceAsMap();
-            return fileInfoService.getFileByName(stringObjectMap.get("name").toString());
-        }).collect(Collectors.toList());
-    }
-
-
-    private List<FileInfo> mapResponseToFileInfo(String responseBody) throws JsonProcessingException {
-        return new ObjectMapper().readValue(responseBody, new TypeReference<>() { //todo: parse this format (hits array): {
-//                        "hits" : [
-//                {
-//                    "_index" : "myindex",
-//                        "_type" : "_doc",
-//                        "_id" : "fhsDBHkBXCVcTa-jRwpc",
-//                        "_score" : 0.2915784,
-//                        "_source" : {
-//                    "name" : "ModelingContinuousSecurity.pdf",
-//                            "path" : "null",
-//                            "contents" : "Computers & Security 97 (2020) 101967
-        });
     }
 
     private void createAndSendInitIndexRequest(int number_of_shards, int number_of_replicas) {
