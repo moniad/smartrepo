@@ -54,7 +54,7 @@ public class FileUploadService {
             return new Result(ResultType.FAILURE, e);
         }
 
-        String parsed = parserService.parse(new_file, fileName);
+        String parsed = parserService.parse(new_file, filePath.toString());
 
         if (parsed == null) {
             return new Result(ResultType.FAILURE, "Failed to parse file.");
@@ -68,6 +68,10 @@ public class FileUploadService {
         documentStructure.setName(fileName);
         documentStructure.setPath(filePath.toString());
         documentStructure.setContents(parsed);
+
+        String currentTimestamp = String.valueOf((int) System.currentTimeMillis() / 1000);
+        documentStructure.setCreationDate(currentTimestamp); //todo
+        documentStructure.setModificationDate(currentTimestamp); //todo
 
         return indexerService.indexDocument(documentStructure);
     }

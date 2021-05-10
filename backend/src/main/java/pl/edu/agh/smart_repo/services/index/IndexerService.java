@@ -123,8 +123,8 @@ public class IndexerService {
 
             SearchHit[] searchHits = searchResponse.getHits().getHits();
             List<FileInfo> results = Arrays.stream(searchHits)
-                    .map(hit -> JSON.parseObject(hit.getSourceAsString(), FileInfo.class))
-                    .map(fileInfo -> fileInfoService.getFileByName(fileInfo.getName()))
+                    .map(hit -> JSON.parseObject(hit.getSourceAsString(), DocumentStructure.class))
+                    .map(FileInfo::of)
                     .collect(Collectors.toList());
             return Option.of(results);
         } catch (IOException e) {

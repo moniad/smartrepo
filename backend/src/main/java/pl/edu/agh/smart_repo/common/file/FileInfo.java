@@ -1,6 +1,7 @@
 package pl.edu.agh.smart_repo.common.file;
 
 import lombok.Data;
+import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
 
 @Data
 public class FileInfo {
@@ -15,5 +16,10 @@ public class FileInfo {
         this.isDirectory = isDirectory;
         this.name = name;
         this.size = size;
+    }
+
+    public static FileInfo of(DocumentStructure documentStructure) {
+        //todo: get more details: e.g. getFileByPath(documentStructure.getPath()); or add fields to DocumentStructure
+        return new FileInfo(documentStructure.getName(), Long.parseLong(documentStructure.getCreationDate()), false, 0);
     }
 }
