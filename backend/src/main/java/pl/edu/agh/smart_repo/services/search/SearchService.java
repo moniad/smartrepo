@@ -39,10 +39,10 @@ public class SearchService {
         return searchDocuments(searchRequest.getPhrase(), searchRequest.getLanguagesToSearchIn());
     }
 
-    public List<FileInfo> searchDocuments(String phrase, List<Language> languagesToSearch) {
-        log.info("Searching for: " + phrase + " in languages: " + languagesToSearch.toString() + "...");
+    public List<FileInfo> searchDocuments(String phrase, List<Language> languagesToSearchIn) {
+        log.info("Searching for: " + phrase + " in languages: " + languagesToSearchIn.toString() + "...");
 
-        List<String> translatedPhrases = Arrays.asList(phrase, "engine");//translationService.translate(phrase, Language.ENGLISH, languagesToSearch);todo
+        List<String> translatedPhrases = translationService.translate(phrase, Language.ENGLISH, languagesToSearchIn);
         return translatedPhrases.stream().map(indexerService::search)
                 .filter(result -> !result.isEmpty())
                 .map(Option::get)

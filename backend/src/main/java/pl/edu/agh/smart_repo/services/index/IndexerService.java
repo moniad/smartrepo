@@ -36,7 +36,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class IndexerService {
-    private final String index;
+    private final String indexWithHost;
+    private final String indexName;
     private final HttpClient client;
     private final RestHighLevelClient restHighLevelClient;
     private final FileInfoService fileInfoService;
@@ -57,7 +58,8 @@ public class IndexerService {
         restHighLevelClient = RestClients.create(clientConfiguration)
                 .rest();
 
-        index = configurationFactory.getElasticSearchAddress() + "/" + configurationFactory.getIndex();
+        indexName = configurationFactory.getIndex();
+        indexWithHost = configurationFactory.getElasticSearchAddress() + "/" + configurationFactory.getIndex();
 
         createAndSendInitIndexRequest(number_of_shards, number_of_replicas);
         createAndSendInitIndexMappingRequest();
@@ -65,7 +67,7 @@ public class IndexerService {
 
     public Result indexDocument(DocumentStructure documentStructure) {
         String requestBody = createIndexDocumentRequest(documentStructure);
-        HttpRequest request = createRequest(index + "/" + "_doc", "POST", requestBody);
+        HttpRequest request = createRequest(indexWithHost + "/" + "_doc", "POST", requestBody);
 
         log.info("Send index document: '" + requestBody + "'");
 
@@ -87,7 +89,7 @@ public class IndexerService {
     public Result deleteFileFromIndex(DocumentStructure document) {
         //TODO: add more conditions to query maybe creation date?
         String requestBody = createDeleteFileFromIndexRequest(document);
-        HttpRequest request = createRequest(index + "/" + "_delete_by_query", "POST", requestBody);
+        HttpRequest request = createRequest(indexWithHost + "/" + "_delete_by_query", "POST", requestBody);
 
         log.info("Delete index for document: '" + requestBody + "'");
         var failureMessage = String.format("Cannot delete file %s from index", document.getName());
@@ -110,9 +112,9 @@ public class IndexerService {
         Option<List<FileInfo>> foundFiles = Option.none();
 
         try {
-            SearchRequest searchRequest = new SearchRequest("myindex"); //todo
+            SearchRequest searchRequest = new SearchRequest(indexName);
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-            searchSourceBuilder.query(QueryBuilders.matchAllQuery()); //"contents", phrase)); //todo
+            searchSourceBuilder.query(QueryBuilders.matchPhraseQuery("contents", phrase));
             searchRequest.source(searchSourceBuilder);
 
             log.info("Search query: '" + searchRequest.source().toString() + "'");
@@ -135,9 +137,9 @@ public class IndexerService {
         String requestBody = String.format("{\"settings\":{\"number_of_shards\":%d,\"number_of_replicas\":%d}}",
                 number_of_shards, number_of_replicas);
 
-        log.info("Send init index: '" + requestBody + "', address: " + index);
+        log.info("Send init index: '" + requestBody + "', address: " + indexWithHost);
 
-        HttpRequest request = createRequest(index, "PUT", requestBody);
+        HttpRequest request = createRequest(indexWithHost, "PUT", requestBody);
 
         try {
             client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -163,7 +165,7 @@ public class IndexerService {
 
         log.info("Send init index mapping: '" + requestBody + "'");
 
-        HttpRequest request = createRequest(index + "/" + "_mapping", "PUT", requestBody);
+        HttpRequest request = createRequest(indexWithHost + "/" + "_mapping", "PUT", requestBody);
 
         try {
             client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -209,21 +211,5 @@ public class IndexerService {
                         "  }\n" +
                         "}",
                 documentStructure.getByDocumentField(DocumentFields.PATH));
-    }
-
-    private String createSearchRequest(String phrase) {
-        return String.format("{\n" +
-                "  \"query\": {\n" +
-                "    \"bool\": {\n" +
-                "      \"must\": [\n" +
-                "        {\n" +
-                "          \"match\": {\n" +
-                "            \"contents\": \"%s\"\n" +
-                "          }\n" +
-                "        }\n" +
-                "      ]\n" +
-                "    }\n" +
-                "  }\n" +
-                "}", phrase);
     }
 }
