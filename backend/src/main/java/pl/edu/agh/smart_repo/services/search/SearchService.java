@@ -24,8 +24,8 @@ public class SearchService {
     private final IndexerService indexerService;
     private final TranslationService translationService;
 
-    private static final List<Language> defaultLanguagesToSearch
-            = new ArrayList<>(Arrays.asList(POLISH, FRENCH, SPANISH, GERMAN, ITALIAN));
+    private static final List<Language> defaultLanguagesToSearchIn
+            = new ArrayList<>(Arrays.asList(POLISH, FRENCH, SPANISH, GERMAN, ITALIAN)); //todo: use HashSet instead of ArrayList
 
     public SearchService(IndexerService indexerService, TranslationService translationService) {
         this.indexerService = indexerService;
@@ -34,7 +34,7 @@ public class SearchService {
 
     public List<FileInfo> searchDocuments(SearchRequest searchRequest) {
         if (searchRequest.getLanguagesToSearchIn() == null) {
-            return searchDocuments(searchRequest.getPhrase(), defaultLanguagesToSearch);
+            return searchDocuments(searchRequest.getPhrase(), defaultLanguagesToSearchIn);
         }
         return searchDocuments(searchRequest.getPhrase(), searchRequest.getLanguagesToSearchIn());
     }
@@ -42,11 +42,26 @@ public class SearchService {
     public List<FileInfo> searchDocuments(String phrase, List<Language> languagesToSearchIn) {
         log.info("Searching for: " + phrase + " in languages: " + languagesToSearchIn.toString() + "...");
 
-        List<String> translatedPhrases = translationService.translate(phrase, Language.ENGLISH, languagesToSearchIn);
-        return translatedPhrases.stream().map(indexerService::search)
+        Language sourceLanguage = Language.ENGLISH; //todo: detect source language
+
+        List<String> searchPhrases = getTranslatedPhrasesToSearchFor(sourceLanguage, languagesToSearchIn, phrase);
+
+        return searchPhrases.stream().map(indexerService::search)
                 .filter(result -> !result.isEmpty())
                 .map(Option::get)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
+    }
+
+    private List<String> getTranslatedPhrasesToSearchFor(Language sourceLanguage, List<Language> languagesToSearchIn, String phrase) {
+        boolean shouldSearchInSourceLanguage = languagesToSearchIn.remove(sourceLanguage);
+        List<String> translatedPhrases = translationService.translate(phrase, sourceLanguage, languagesToSearchIn);
+        List<String> searchPhrases = new ArrayList<>(translatedPhrases);
+
+        if (shouldSearchInSourceLanguage) {
+            searchPhrases.add(phrase);
+        }
+
+        return searchPhrases;
     }
 }
