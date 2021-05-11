@@ -157,13 +157,14 @@ export default {
         this.name = to.path
       } else this.name = ''
       this.loadFiles(to.path)
-      this.from=from
+      this.from = from
     },
     items() {
       return this.files
     },
   },
   beforeMount() {
+    this.name = this.$route.path === '/'? this.name:this.$route.path
     this.loadFiles(this.$route.path);
   },
 };

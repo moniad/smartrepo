@@ -1,1 +1,2 @@
-temporar location of common file storage shared between dockerized parsers and main app
+temporary location of common file storage shared between dockerized parsers and main app
+Do NOT remove!!

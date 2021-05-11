@@ -12,6 +12,7 @@ public class DocumentStructure {
     private String creationDate;
     private String modificationDate;
     private String language;
+//    private String size; extension todo
 
     public void setByDocumentField(DocumentFields documentField, String val) {
         switch (documentField) {

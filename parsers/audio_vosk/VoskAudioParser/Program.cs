@@ -50,7 +50,7 @@ namespace VoskAudioParser
 
                     var body = ea.Body.ToArray();
                     var relativePath = Encoding.UTF8.GetString(body);
-                    var path = Path.Combine(storagePath, relativePath);
+                    var path = Path.Join(storagePath, relativePath);
 
                     Log.Info($"Parsing {path}");
 

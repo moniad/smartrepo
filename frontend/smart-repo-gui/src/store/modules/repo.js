@@ -33,7 +33,7 @@ const repoModule = {
     },
     actions: {
         uploadFiles(
-            { commit, dispatch, rootGetters, getters, rootState, state }, file
+            { commit, dispatch, rootGetters, getters, rootState, state }, {file, path}
         ) {
             axios.post("http://localhost:7777/upload", file,
                 {
@@ -46,7 +46,7 @@ const repoModule = {
                     if (response.status === 200) {
                         console.log("Response: " + response.data)
                         commit('FILES_UPLOADED')
-                        dispatch('loadFiles');
+                        dispatch('loadFiles',path);
                     } else {
                         console.log("ERROR: (" + response.status + ")")
                     }
@@ -94,14 +94,10 @@ const repoModule = {
                 })
         },
         search({ commit, dispatch, rootGetters, getters, rootState, state }, { phrase, languages }){
-            axios.get("http://localhost:7777/search", {params:{
+            axios.post("http://localhost:7777/search", {
                     phrase:phrase?phrase:'',
                     languages:languages?languages:[],
-                },
-                paramsSerializer: params => {
-                    return qs.stringify(params, { arrayFormat: 'comma', encode: false })
-                  }
-                })
+            })
                 .then(async response =>{
                     commit('UPDATE_FILES',response.data)
                 })

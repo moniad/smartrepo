@@ -54,11 +54,11 @@ public class MyMemoryTranslator implements Translator {
     }
 
 
-    private class MyMemoryDTO {
+    private static class MyMemoryDTO {
         ResponseData responseData;
     }
 
-    private class ResponseData {
+    private static class ResponseData {
         String translatedText;
         double match;
     }
