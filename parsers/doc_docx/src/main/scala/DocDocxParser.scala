@@ -36,7 +36,7 @@ object DocDocxParser extends App {
   channel.queueDeclare(queueNameDocx, false, false, false, null)
   println("Waiting for messages - docx.")
 
-  val deliverCallback: DeliverCallback = (consumerTag, delivery) => {
+   val deliverCallbackDoc: DeliverCallback = (consumerTag, delivery) => {
 
     val path = new String(delivery.getBody(), "UTF-8")
 
@@ -49,36 +49,50 @@ object DocDocxParser extends App {
 
     getFileFromStorage(path) match {
       case Success(f) =>
-        if (extension == "doc"){
           parseDoc(f) match {
             case Success(r) =>
               println(r)
               result = r
 
             case Failure(r) => println(s"Cannot parse doc file. Reason: $r")}
-        }
-        else{
+      case Failure(f) => println(s"Cannot find file with path: $path. Reason: $f")
+    }
+
+    println("Parsed doc succesfull")
+
+    channel.basicPublish("", reply_to, null, result.getBytes("UTF-8"))
+  }
+
+  val deliverCallbackDocx: DeliverCallback = (consumerTag, delivery) => {
+
+    val path = new String(delivery.getBody(), "UTF-8")
+
+    val reply_to = delivery.getProperties().getReplyTo()
+    println("Parsing: '" + path + "'")
+
+    val extension = path.split("\\.").last
+
+    var result = ""
+
+    getFileFromStorage(path) match {
+      case Success(f) =>
           parseDocx(f) match {
             case Success(r) =>
               println(r)
               result = r
             case Failure(r) => println(s"Cannot parse docx file. Reason: $r")}
-        }
+
       case Failure(f) => println(s"Cannot find file with path: $path. Reason: $f")
     }
 
-    if (extension == "doc"){
-      println("Parsed doc succesfull")
-    }
-    else{
-      println("Parsed docx succesfull")
-    }
+    println("Parsed docx succesfull")
+
     channel.basicPublish("", reply_to, null, result.getBytes("UTF-8"))
   }
 
   val cancel: CancelCallback = consumerTag => {}
-  channel.basicConsume(queueNameDoc, true, deliverCallback, cancel)
-  channel.basicConsume(queueNameDocx, true, deliverCallback, cancel)
+  channel.basicConsume(queueNameDoc, true, deliverCallbackDoc, cancel)
+  channel.basicConsume(queueNameDocx, true, deliverCallbackDocx, cancel)
 
   def retryConnection(factory: ConnectionFactory): Connection = {
     val connectionTrials = 5
