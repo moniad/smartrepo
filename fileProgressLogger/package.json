@@ -1,0 +1,15 @@
+{
+  "name": "fileprogresslogger",
+  "version": "1.0.0",
+  "description": "FileProgressLogger is node.js Kafka client serving information about file processing progress..",
+  "main": "fileProgressLogger.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "kafka-node": "^5.0.0",
+    "websocket": "^1.0.34"
+  }
+}

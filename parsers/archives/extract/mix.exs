@@ -15,7 +15,7 @@ defmodule Extract.MixProject do
   def application do
     [
       applications: [:amqp],
-      extra_applications: [:logger]
+      extra_applications: [:lager, :logger]
     ]
   end
 
@@ -26,3 +26,4 @@ defmodule Extract.MixProject do
     ]
   end
 end
+

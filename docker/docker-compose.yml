@@ -23,7 +23,6 @@ services:
     image: elasticsearch:7.6.0
     ports:
       - 9200:9200
-      - 9300:9300
     environment:
       discovery.type: single-node
       xpack.license.self_generated.type: trial
@@ -62,6 +61,9 @@ services:
     image: smart-repo-backend:latest
     ports:
       - 7777:7777
+      - 5005:5005
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     networks:
       rabbit-network:
       elk:
@@ -127,6 +129,21 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
+  smart-repo-archives:
+    build:
+      context: ../parsers/archives
+      args:
+        - RABBITMQ_HOST=${RABBITMQ_HOST}
+    image: smart-repo-archives:latest
+    restart: unless-stopped
+    networks:
+      rabbit-network:
+    volumes:
+      - ../storage:/storage
+    depends_on:
+      smart-repo-rabbitmq:
+        condition: service_healthy
+
   smart-repo-doc-docx:
     build:
       context: ../parsers/doc_docx
@@ -141,7 +158,7 @@ services:
     depends_on:
       smart-repo-rabbitmq:
         condition: service_healthy
-
+        
 networks:
   rabbit-network:
   smart-repo-network:

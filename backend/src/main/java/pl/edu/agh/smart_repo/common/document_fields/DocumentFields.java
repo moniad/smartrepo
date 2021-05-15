@@ -9,14 +9,14 @@ public enum DocumentFields {
     MODIFICATION_DATE("modification_date"),
     LANGUAGE("language");
 
-    private final String s;
+    private final String fieldName;
 
-    DocumentFields(String s) {
-        this.s = s;
+    DocumentFields(String fieldName) {
+        this.fieldName = fieldName;
     }
 
     @Override
     public String toString() {
-        return s;
+        return fieldName;
     }
 }
