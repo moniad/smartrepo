@@ -10,15 +10,28 @@ import shutil
 
 class VideoParser:
     def __init__(self):
+        # file parameters
+        self.pathIn = ""
+        self.pathOut = pathlib.Path('storage')
+        self.count = 0
+        self.vidCap = None
+        self.success, self.image = None, None
+        self.video_formats = ["mp4", "mov", "wmv", "avi", "mpeg"]
+        self.fileName = ""
+        self.framesFolder = None
+        self.audioFolder = None
+        self.audioPath = None
+
         # RabbitMQ initialization
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(host="localhost", port=5672))
         self.video_channel = self.connection.channel()
-
-        self.video_channel.queue_declare(queue='video', durable=True)
-
         self.video_channel.basic_qos(prefetch_count=1)
-        self.video_channel.basic_consume(queue='video', on_message_callback=self.callback)
+
+        for video_format in self.video_formats:
+            self.video_channel.queue_declare(queue=video_format)
+            self.video_channel.basic_consume(queue=video_format,
+                                             on_message_callback=self.callback)
 
         self.audio_channel = self.connection.channel()
         self.frame_channel = self.connection.channel()
@@ -40,18 +53,6 @@ class VideoParser:
 
         self.audio_response = ""
         self.frame_response = ""
-
-        # file parameters
-        self.pathIn = ""
-        self.pathOut = pathlib.Path('storage')
-        self.count = 0
-        self.vidCap = None
-        self.success, self.image = None, None
-        self.video_formats = ["mp4", "mov", "wmv", "avi", "mpeg"]
-        self.fileName = ""
-        self.framesFolder = None
-        self.audioFolder = None
-        self.audioPath = None
 
     def set_paths(self, video_path):
         self.pathIn = video_path
