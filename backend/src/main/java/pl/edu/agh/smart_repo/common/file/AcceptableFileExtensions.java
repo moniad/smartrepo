@@ -7,6 +7,7 @@ public enum AcceptableFileExtensions {
     txt("txt"),
     doc("doc"),
     docx("docx"),
+    ppt("ppt"),
     pptx("pptx"),
     odt("odt"),
     ods("ods"),
