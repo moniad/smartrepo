@@ -1,9 +1,10 @@
 import ntpath
-import unittest
-import sys, os
+import os
 import pathlib as pl
 import pika
+import sys
 import time
+import unittest
 
 
 class VideoParserTestCase(unittest.TestCase):
@@ -24,10 +25,8 @@ class VideoParserTestCase(unittest.TestCase):
         cls.channel.queue_declare(queue='video', durable=True)
         cls.channel.basic_publish(exchange='',
                                   routing_key='video',
-                                  body=cls.path_input,
-                                  properties=pika.BasicProperties(
-                                      delivery_mode=2,  # make message persistent
-                                  ))
+                                  body=cls.path_input.encode('utf-8'),
+                                  properties=pika.BasicProperties())
         time.sleep(25)
 
     @classmethod
