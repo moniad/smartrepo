@@ -14,7 +14,7 @@ public class DocumentStructure {
     private String language;
 //    private String size; extension todo
 
-    public void setByDocumentField(DocumentFields documentField, String val) {
+    public void setByDocumentField(DocumentField documentField, String val) {
         switch (documentField) {
             case NAME:
                 this.name = val;
@@ -40,7 +40,7 @@ public class DocumentStructure {
         }
     }
 
-    public String getByDocumentField(DocumentFields documentField) {
+    public String getByDocumentField(DocumentField documentField) {
         switch (documentField) {
             case NAME:
                 return this.name;

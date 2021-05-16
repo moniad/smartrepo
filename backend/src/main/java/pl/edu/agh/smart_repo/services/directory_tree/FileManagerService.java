@@ -25,7 +25,7 @@ public class FileManagerService {
 
     public Result createDirectory(String path) {
         Path resultPath = Paths.get(userFilesDirectoryPath.toString(), path);
-        var message = String.format("Directory %s created successfully", path);
+        String message = String.format("Directory %s created successfully", path);
         try {
             Files.createDirectory(resultPath);
         } catch (FileAlreadyExistsException e) {
@@ -47,7 +47,7 @@ public class FileManagerService {
         try {
             Files.delete(resultPath);
 
-            var document = new DocumentStructure();
+            DocumentStructure document = new DocumentStructure();
             document.setPath(resultPath.toString());
             result = indexerService.deleteFileFromIndex(document);
 

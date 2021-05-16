@@ -1,0 +1,9 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:gs="https://agh.edu.pl/smart-repo/file-extension-service">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <gs:getFileExtensionRequest>
+            <gs:path>note.txt</gs:path>
+        </gs:getFileExtensionRequest>
+    </soapenv:Body>
+</soapenv:Envelope>
