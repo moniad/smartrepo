@@ -44,8 +44,7 @@ public class FileExtensionService {
             String fileExtension = getExtensionByInputStream(stream, filePath.toFile(), metadata);
             extension = Extension.fromValue(fileExtension);
         } catch (Exception e) {
-            log.error("Cannot get stored file extension. File: {}", filePath);
-            log.error(e.getMessage());
+            log.error("Cannot get stored file extension. File: {}. Message: {}", filePath, e.getMessage());
         }
         return extension;
     }
@@ -55,18 +54,28 @@ public class FileExtensionService {
         try {
             MediaType mediaType = config.getMimeRepository().detect(stream, metadata);
             MimeType mimeType = config.getMimeRepository().forName(mediaType.toString());
-            extension = mimeType.getExtension().split("\\.")[1];
+            extension = getFileExtensionByFileNameOrMimeType(mimeType, file.getName());
             if (!hasAcceptableExtension(extension)) {
-                log.error("File extension is not acceptable. Available extensions are: " + Arrays.asList(AcceptableFileExtension.values()));
+                log.error("File extension '" + extension + "' is not acceptable. Available extensions are: " + Arrays.asList(AcceptableFileExtension.values()));
                 return null;
             }
         } catch (FileNotFoundException e) {
             log.error("Cannot find file: " + file);
         } catch (Exception e) {
-            log.error("Cannot get new file extension. File: {}", file.getName());
+            log.error("Exception while getting new file extension. Determined extension: {}. File: {}", extension, file.getName());
             log.error(e.getMessage());
         }
         return extension;
+    }
+
+    private String getFileExtensionByFileNameOrMimeType(MimeType mimeType, String fileName) {
+        String[] fileNameString = fileName.split("\\.");
+        String potentialExtension = fileNameString[fileNameString.length - 1];
+        if (potentialExtension == null || !fileName.contains(".")) {
+            String extensionFromMimeType = mimeType.getExtension();
+            potentialExtension = extensionFromMimeType == null ? null : extensionFromMimeType.split("\\.")[1];
+        }
+        return potentialExtension;
     }
 
     private boolean hasAcceptableExtension(String extension) {

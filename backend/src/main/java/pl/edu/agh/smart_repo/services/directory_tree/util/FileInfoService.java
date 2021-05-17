@@ -36,6 +36,8 @@ public class FileInfoService {
 
     private void setExtension(File file, FileInfo fileInfo) {
         Extension extension = fileExtensionService.getStoredFileExtension(file.toPath());
-        fileInfo.setExtension(extension.value());
+        if (extension != null) {
+            fileInfo.setExtension(extension.value());
+        }
     }
 }

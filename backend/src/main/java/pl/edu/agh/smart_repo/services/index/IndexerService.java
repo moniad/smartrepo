@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import io.vavr.control.Option;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -77,6 +78,9 @@ public class IndexerService {
         } catch (IOException e) {
             log.error("Unexpected error while connecting to ElasticSearch (index document mappings)");
             return new Result(ResultType.FAILURE);
+        } catch (ElasticsearchStatusException e) {
+            log.error("Cannot index document. Message: " + e.getMessage());
+            return new Result(ResultType.FAILURE);
         }
 
         return new Result(ResultType.SUCCESS);
@@ -85,12 +89,15 @@ public class IndexerService {
     public Result deleteFileFromIndex(DocumentStructure document) {
         DeleteByQueryRequest deleteFileFromIndexRequest = createDeleteFileFromIndexRequest(document);
         log.info("Delete file request: '" + deleteFileFromIndexRequest.getSearchRequest().source().toString() + "'");
+        String failureMessage = String.format("Cannot delete file %s from index", document.getName());
         try {
             BulkByScrollResponse deleteResponse = restHighLevelClient.deleteByQuery(deleteFileFromIndexRequest, RequestOptions.DEFAULT);
             log.info("Index response: " + deleteResponse);
         } catch (IOException e) {
             log.error("Unexpected error while connecting to ElasticSearch (delete from index)");
-            String failureMessage = String.format("Cannot delete file %s from index", document.getName());
+            return new Result(ResultType.FAILURE, failureMessage);
+        } catch (ElasticsearchStatusException e) {
+            log.error("Cannot delete file from index. Message: " + e.getMessage());
             return new Result(ResultType.FAILURE, failureMessage);
         }
 
@@ -121,6 +128,8 @@ public class IndexerService {
             return Option.of(results);
         } catch (IOException e) {
             log.error("Error while searching index for phrase: " + phrase);
+        } catch (ElasticsearchStatusException e) {
+            log.error("Cannot search document. Message: " + e.getMessage());
         }
         return foundFiles;
     }
