@@ -1,15 +1,5 @@
 package pl.edu.agh.smart_repo.tika_ocr;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.io.*;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
@@ -25,6 +15,16 @@ import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
+
+import java.io.*;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class TikaClient {
     private static final String pathToPdfs = "backend/src/main/resources/parsable-documents/pdf/";
@@ -53,19 +53,19 @@ public class TikaClient {
             measureTimeForFile(pathToPdfs, "pdfs/", fileName, tikaConfig, false, times);
         }
 
-        File file = new File(resultsPath+"times.txt");
-        writeHashMapToFile(file,times);
+        File file = new File(resultsPath + "times.txt");
+        writeHashMapToFile(file, times);
     }
 
     public static String parseText(String path, String filename, TikaConfig tikaConfig,
-                                      Metadata metadata, Boolean withOCR) throws Exception {
+                                   Metadata metadata, Boolean withOCR) throws Exception {
         System.out.println("Examining: [" + filename + "]");
 
-        InputStream stream = TikaInputStream.get(Paths.get(path+filename));
+        InputStream stream = TikaInputStream.get(Paths.get(path + filename));
         Detector detector = tikaConfig.getDetector();
 
         LanguageDetector langDetector = new OptimaizeLangDetector().loadModels();
-        LanguageResult lang = langDetector.detect(FileUtils.readFileToString(new File(path+filename), UTF_8));
+        LanguageResult lang = langDetector.detect(FileUtils.readFileToString(new File(path + filename), UTF_8));
 
         System.out.println("The language of this content is: ["
                 + lang.getLanguage() + "]");
@@ -80,7 +80,7 @@ public class TikaClient {
         ContentHandler handler = new BodyContentHandler();
         ParseContext parseContext = new ParseContext();
 
-        if(withOCR) {
+        if (withOCR) {
             TesseractOCRConfig config = new TesseractOCRConfig();
 
             PDFParserConfig pdfConfig = new PDFParserConfig();
@@ -96,7 +96,7 @@ public class TikaClient {
         return handler.toString();
     }
 
-    public static void writeHashMapToFile(File file, Map<String, Long> map){
+    public static void writeHashMapToFile(File file, Map<String, Long> map) {
         try (BufferedWriter bf = new BufferedWriter(new FileWriter(file))) {
             for (Map.Entry<String, Long> entry : map.entrySet()) {
                 bf.write(entry.getKey() + ":" + entry.getValue());
@@ -110,7 +110,7 @@ public class TikaClient {
 
     public static void measureTimeForFile(String path, String resultsPathEnd, String fileName,
                                           TikaConfig tikaConfig, Boolean withOCR,
-                                          Map<String,Long> times) throws Exception {
+                                          Map<String, Long> times) throws Exception {
         long startTime = System.nanoTime();
         Metadata metadata = new Metadata();
         String text = parseText(path, fileName, tikaConfig, metadata, withOCR);
@@ -132,13 +132,13 @@ public class TikaClient {
         Files.write(resultFilePath, strToBytes);
     }
 
-    public static void languageDetectionTest(){
+    public static void languageDetectionTest() {
         LanguageDetector langDetector = new OptimaizeLangDetector().loadModels();
         String pol = "Ala ma kota a Ola ma psa. Tak już w życiu bywa.";
         String eng = "Frankly, I find that outrageous.";
         String de = "Die Bücher des Frühjahrs";
-        System.out.println(pol+": "+langDetector.detect(pol).getLanguage());
-        System.out.println(eng+": "+langDetector.detect(eng).getLanguage());
-        System.out.println(de+": "+langDetector.detect(de).getLanguage());
+        System.out.println(pol + ": " + langDetector.detect(pol).getLanguage());
+        System.out.println(eng + ": " + langDetector.detect(eng).getLanguage());
+        System.out.println(de + ": " + langDetector.detect(de).getLanguage());
     }
 }

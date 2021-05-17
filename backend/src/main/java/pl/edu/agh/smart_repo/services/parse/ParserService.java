@@ -2,9 +2,8 @@ package pl.edu.agh.smart_repo.services.parse;
 
 import com.rabbitmq.client.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import pl.edu.agh.smart_repo.common.file.AcceptableFileExtensions;
+import pl.edu.agh.smart_repo.common.file.AcceptableFileExtension;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
 import pl.edu.agh.smart_repo.services.file_extension.FileExtensionService;
 
@@ -15,12 +14,11 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 @Service
 public class ParserService {
-    Channel channel;
+    private final Channel channel;
+    private final FileExtensionService fileExtensionService;
 
-    @Autowired
-    FileExtensionService fileExtensionService;
-
-    public ParserService(ConfigurationFactory configurationFactory) throws Exception {
+    public ParserService(ConfigurationFactory configurationFactory, FileExtensionService fileExtensionService) throws Exception {
+        this.fileExtensionService = fileExtensionService;
         // RabbitMQ settings
         int port = 5672;
         ConnectionFactory factory = new ConnectionFactory();
@@ -29,33 +27,33 @@ public class ParserService {
         Connection connection = retryConnection(factory);
         channel = connection.createChannel();
 
-        for (AcceptableFileExtensions extension : AcceptableFileExtensions.values())
+        for (AcceptableFileExtension extension : AcceptableFileExtension.values())
             channel.queueDeclare(extension.toString(), false, false, false, null);
         // END: RabbitMQ setting
     }
 
-    public String parse(File file, String path_relative_to_storage) {
+    public String parse(File file, String pathRelativeToStorage) {
         try {
-            String reply_to = channel.queueDeclare().getQueue();
+            String replyQueue = channel.queueDeclare().getQueue();
 
             AMQP.BasicProperties props = new AMQP.BasicProperties
                     .Builder()
-                    .replyTo(reply_to)
+                    .replyTo(replyQueue)
                     .build();
 
-            String extension = fileExtensionService.getExtension(file);
-            if (extension == null) {
-                log.error("Error while checking file extension.");
+            String queueName = fileExtensionService.getNewFileExtension(file);
+            if (queueName == null) {
+                log.error("Queue name not determined. File will not be sent to any queue.");
                 return null;
             }
 
-            channel.basicPublish("", extension, props, path_relative_to_storage.getBytes(StandardCharsets.UTF_8));
+            channel.basicPublish("", queueName, props, pathRelativeToStorage.getBytes(StandardCharsets.UTF_8));
 
             GetResponse response = null;
             while (response == null)
-                response = channel.basicGet(reply_to, true);
+                response = channel.basicGet(replyQueue, true);
 
-            channel.queueDelete(reply_to);
+            channel.queueDelete(replyQueue);
 
             return new String(response.getBody(), StandardCharsets.UTF_8);
 
@@ -70,7 +68,7 @@ public class ParserService {
         int waitTime = 5000;
         for (int retry = 0; retry <= connectionTrials; ++retry) {
             try {
-                Thread.sleep(retry * waitTime);
+                Thread.sleep((long) retry * waitTime);
                 return factory.newConnection();
             } catch (IOException e) {
                 log.info("Unable to establish connection to RabbitMQ. Trial: " + retry);

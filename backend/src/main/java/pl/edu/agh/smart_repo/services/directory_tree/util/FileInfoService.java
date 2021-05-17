@@ -1,5 +1,6 @@
 package pl.edu.agh.smart_repo.services.directory_tree.util;
 
+import https.agh_edu_pl.smart_repo.file_extension_service.Extension;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pl.edu.agh.smart_repo.common.file.FileInfo;
@@ -34,7 +35,7 @@ public class FileInfoService {
     }
 
     private void setExtension(File file, FileInfo fileInfo) {
-        var extension = fileExtensionService.getExtension(file);
-        fileInfo.setExtension(extension);
+        Extension extension = fileExtensionService.getStoredFileExtension(file.toPath());
+        fileInfo.setExtension(extension.value());
     }
 }

@@ -42,9 +42,9 @@ public class FileUploadService {
 
         Path filePath = Paths.get(storagePath.toString(), path, fileName);
 
-        File new_file = new File(filePath.toUri());
+        File newFile = new File(filePath.toUri());
 
-        try (FileOutputStream fos = new FileOutputStream(new_file)) {
+        try (FileOutputStream fos = new FileOutputStream(newFile)) {
             fos.write(file.getBytes());
         } catch (FileNotFoundException e) {
             log.error("Error: file cannot be created.");
@@ -54,7 +54,7 @@ public class FileUploadService {
             return new Result(ResultType.FAILURE, e);
         }
 
-        String parsed = parserService.parse(new_file, Paths.get(path, fileName).toString());
+        String parsed = parserService.parse(newFile, Paths.get(path, fileName).toString());
 
         if (parsed == null) {
             return new Result(ResultType.FAILURE, "Failed to parse file.");
