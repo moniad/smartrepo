@@ -1,0 +1,33 @@
+plugins {
+    id 'groovy'
+}
+
+jar {
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
+
+    manifest {
+        attributes(
+                'Main-Class': 'Parser'
+        )
+    }
+
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+group 'pl.edu.agh'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:3.0.7'
+    compile group: 'org.apache.poi', name: 'poi', version: '5.0.0'
+    compile group: 'org.apache.poi', name: 'poi-ooxml', version: '5.0.0'
+    compile group: 'org.apache.poi', name: 'poi-scratchpad', version: '5.0.0'
+    compile group: 'org.apache.poi', name: 'ooxml-schemas', version: '1.4'
+    compile group: 'com.rabbitmq', name: 'amqp-client', version: '5.12.0'
+}
