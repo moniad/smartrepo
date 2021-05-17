@@ -159,6 +159,21 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
+  smart-repo-ppt-pptx:
+    build:
+      context: ../parsers/ppt_pptx
+      args:
+        - RABBITMQ_HOST=${RABBITMQ_HOST}
+    image: smart-repo-ppt-pptx:latest
+    restart: unless-stopped
+    networks:
+      rabbit-network:
+    volumes:
+      - ../storage:/storage
+    depends_on:
+      smart-repo-rabbitmq:
+        condition: service_healthy
+        
   smart-repo-xls-xlsx:
     build:
       context: ../parsers/xls_xlsx
@@ -172,7 +187,7 @@ services:
       - ../storage:/storage
     depends_on:
       smart-repo-rabbitmq:
-        condition: service_healthy
+        condition: service_healthy        
         
 networks:
   rabbit-network:
