@@ -15,11 +15,18 @@ class TextExtractor {
         def results = []
         for (slide in slideShow.slides) {
             def text = extractor.getText(slide)
-            def notes = slide.notes.textParagraphs.findAll {
-                !it.isEmpty() && !(it.size() == 1 && (it.head().toString() == '' ||  it.head().toString() == '*'))
-            }.flatten().join(newLine)
-            
-            results.add(notes + newLine + text)
+
+            def slideResult
+            if (!(slide.notes == null)) {
+                def notes = slide.notes.textParagraphs.findAll {
+                    !it.isEmpty() && !(it.size() == 1 && (it.head().toString() == '' || it.head().toString() == '*'))
+                }.flatten().join(newLine)
+
+                slideResult = text + newLine + notes
+            } else {
+                slideResult = text
+            }
+            results.add(slideResult)
         }
         
         results.join(newLine)
