@@ -12,7 +12,7 @@ class VideoParser:
     def __init__(self):
         # file parameters
         self.pathIn = ""
-        self.pathOut = pathlib.Path('storage')
+        self.pathOut = pathlib.Path('../../storage')
         self.count = 0
         self.vidCap = None
         self.success, self.image = None, None
@@ -22,9 +22,14 @@ class VideoParser:
         self.audioFolder = None
         self.audioPath = None
 
+        if len(sys.argv) >1:
+            rabbit_host = sys.argv[1]
+        else:
+            rabbit_host = "localhost"
+
         # RabbitMQ initialization
         self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host="localhost", port=5672))
+            pika.ConnectionParameters(host=rabbit_host, port=5672))
         self.video_channel = self.connection.channel()
         self.video_channel.basic_qos(prefetch_count=1)
 
@@ -64,9 +69,13 @@ class VideoParser:
 
     def create_directories(self):
         # Creates temporary output directories for audio and frames
+        #print("Directory", str(Path(self.pathOut, self.fileName)))
+        print(self.framesFolder)
+        print(pathlib.Path(self.pathOut, self.fileName))
         try:
-            os.mkdir(pathlib.Path(self.pathOut, self.fileName))
-            os.mkdir(self.framesFolder)
+            
+            os.mkdir(pathlib.Path(self.pathOut, self.fileName[0:-4])) #TODO fix this to create proper directories
+            os.mkdir(self.framesFolder) # TODO this will not be created in current implementation
             os.mkdir(self.audioFolder)
         except FileExistsError:
             print("File with this name has already been parsed.")

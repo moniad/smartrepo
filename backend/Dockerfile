@@ -3,6 +3,7 @@ COPY src /usr/src/app/src
 COPY pom.xml /usr/src/app
 RUN mvn -f /usr/src/app/pom.xml clean package
 
+
 FROM adoptopenjdk/openjdk11:alpine-jre
 
 ARG RABBITMQ_HOST
