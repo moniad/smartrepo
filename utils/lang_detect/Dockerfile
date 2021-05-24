@@ -1,14 +1,14 @@
-FROM openjdk:11-jdk-slim as build
+FROM golang:1.16.4-buster
 
 WORKDIR /src
 COPY . .
-RUN chmod +x ./gradlew && apt update && apt install dos2unix && dos2unix ./gradlew && ./gradlew build --no-daemon
+# RUN wget https://dl.google.com/go/go1.16.4.linux-amd64.tar.gz && tar -C /usr/local -xzf go1.16.4.linux-amd64.tar.gz
 
-FROM groovy:3.0.7-jre11
+RUN go get -u github.com/abadojack/whatlanggo
 
 ARG RABBITMQ_HOST
 ENV HOST=$RABBITMQ_HOST
 
-COPY --from=build ./src/build/libs/ppt_pptx-1.0-SNAPSHOT.jar .
+COPY main/golang/LanguageDetector.go .
 
-ENTRYPOINT java -jar ppt_pptx-1.0-SNAPSHOT.jar $HOST
+ENTRYPOINT go rugit cn LanguageDetector.go
