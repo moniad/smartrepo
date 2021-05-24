@@ -1,6 +1,6 @@
 package pl.edu.agh.smart_repo.common.file;
 
-public enum AcceptableFileExtensions {
+public enum AcceptableFileExtension {
     pdf("pdf"),
     xlsx("xlsx"),
     xls("xls"),
@@ -17,16 +17,14 @@ public enum AcceptableFileExtensions {
     gz("gz"),
     wav("wav");
 
-    private final String s;
+    private final String name;
 
-    AcceptableFileExtensions(String s)
-    {
-        this.s = s;
+    AcceptableFileExtension(String name) {
+        this.name = name;
     }
 
     @Override
-    public String toString()
-    {
-        return s;
+    public String toString() {
+        return name;
     }
 }

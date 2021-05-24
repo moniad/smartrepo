@@ -62,7 +62,7 @@ public class TxtTikaParser {
                 e.printStackTrace();
             }
 
-            System.out.println("parsed txt succesfull");
+            System.out.println("parsed txt succesfully");
 
             channel.basicPublish("", reply_to, null, handler.toString().getBytes(StandardCharsets.UTF_8));
         };
