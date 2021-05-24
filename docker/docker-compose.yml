@@ -129,20 +129,20 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
-  smart-repo-archives:
-    build:
-      context: ../parsers/archives
-      args:
-        - RABBITMQ_HOST=${RABBITMQ_HOST}
-    image: smart-repo-archives:latest
-    restart: unless-stopped
-    networks:
-      rabbit-network:
-    volumes:
-      - ../storage:/storage
-    depends_on:
-      smart-repo-rabbitmq:
-        condition: service_healthy
+#  smart-repo-archives:
+#    build:
+#      context: ../parsers/archives
+#      args:
+#        - RABBITMQ_HOST=${RABBITMQ_HOST}
+#    image: smart-repo-archives:latest
+#    restart: unless-stopped
+#    networks:
+#      rabbit-network:
+#    volumes:
+#      - ../storage:/storage
+#    depends_on:
+#      smart-repo-rabbitmq:
+#        condition: service_healthy
 
   smart-repo-doc-docx:
     build:
@@ -165,6 +165,21 @@ services:
       args:
         - RABBITMQ_HOST=${RABBITMQ_HOST}
     image: smart-repo-ppt-pptx:latest
+    restart: unless-stopped
+    networks:
+      rabbit-network:
+    volumes:
+      - ../storage:/storage
+    depends_on:
+      smart-repo-rabbitmq:
+        condition: service_healthy
+
+  smart-repo-python-archive:
+    build:
+      context: ../parsers/python_archive
+      args:
+        - RABBITMQ_HOST=${RABBITMQ_HOST}
+    image: smart-repo-python-archive:latest
     restart: unless-stopped
     networks:
       rabbit-network:
