@@ -63,7 +63,7 @@ public class RequestController {
     @GetMapping(value = "/files")
     @ResponseBody
     public ResponseEntity<List<FileInfo>> getFiles(@RequestParam("path") String path) {
-        var files = fileTreeFetcherService.fetchFileTree(path, false, null);
+        List<FileInfo> files = fileTreeFetcherService.fetchFileTree(path, false, null);
         return new ResponseEntity<>(files, HttpStatus.OK);
     }
 
@@ -71,7 +71,7 @@ public class RequestController {
     @DeleteMapping(value = "/files")
     @ResponseBody
     public ResponseEntity<String> deleteFile(@RequestParam("path") String path) {
-        var result = fileManagerService.deleteFile(path);
+        Result result = fileManagerService.deleteFile(path);
 
         if (result.isSuccess())
             return new ResponseEntity<>("Deleted file: " + path, HttpStatus.OK);
@@ -83,7 +83,7 @@ public class RequestController {
     @PostMapping(value = "/files")
     @ResponseBody
     public ResponseEntity<String> createDirectory(@RequestBody CreateDirectoryRequest createDirectoryRequest) {
-        var result = fileManagerService.createDirectory(createDirectoryRequest.getPath());
+        Result result = fileManagerService.createDirectory(createDirectoryRequest.getPath());
 
         if (result.isSuccess())
             return new ResponseEntity<>("Created directory: " + createDirectoryRequest.getPath(), HttpStatus.OK);

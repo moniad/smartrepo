@@ -1,7 +1,7 @@
-FROM maven:3.8-jdk-11 AS build
+FROM maven:3.8-jdk-8 AS build
 COPY src /usr/src/app/src
 COPY pom.xml /usr/src/app
-RUN mvn -f /usr/src/app/pom.xml clean package
+RUN mvn -f /usr/src/app/pom.xml clean install
 
 
 FROM adoptopenjdk/openjdk11:alpine-jre

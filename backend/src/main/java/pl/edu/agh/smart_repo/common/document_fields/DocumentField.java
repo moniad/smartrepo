@@ -1,6 +1,6 @@
 package pl.edu.agh.smart_repo.common.document_fields;
 
-public enum DocumentFields {
+public enum DocumentField {
     NAME("name"),
     PATH("path"),
     CONTENTS("contents"),
@@ -11,7 +11,7 @@ public enum DocumentFields {
 
     private final String fieldName;
 
-    DocumentFields(String fieldName) {
+    DocumentField(String fieldName) {
         this.fieldName = fieldName;
     }
 
