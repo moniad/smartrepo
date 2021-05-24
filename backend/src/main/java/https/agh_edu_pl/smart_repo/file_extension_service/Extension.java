@@ -59,7 +59,7 @@ public enum Extension {
     @XmlEnumValue("pptx")
     PPTX("pptx"),
     @XmlEnumValue("ppt")
-    PPTX("ppt"),
+    PPT("ppt"),
     @XmlEnumValue("odt")
     ODT("odt"),
     @XmlEnumValue("ods")
