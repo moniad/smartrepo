@@ -71,7 +71,9 @@ public enum Extension {
     @XmlEnumValue("gz")
     GZ("gz"),
     @XmlEnumValue("wav")
-    WAV("wav");
+    WAV("wav"),
+    @XmlEnumValue("mp4")
+    MP4("mp4");
     private final String value;
 
     Extension(String v) {
