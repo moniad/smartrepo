@@ -45,9 +45,7 @@ class ImageRecognition:
             except:
                 self.response=[]
 
-        #with open("response.txt", 'w') as f:
-        #    for label in self.response['Labels']:
-        #        f.write(str(label['Name']) + '\n')
+
 
     def callback(self, ch, method, properties, body):
         self.audio_response = ""
@@ -73,16 +71,4 @@ class ImageRecognition:
 if __name__ == "__main__":
     recognizer = ImageRecognition()
     recognizer.image_channel.start_consuming()
-    #Update credentials in aws_credentials.json
-    #Run: python image_recogniton.py pathInput
 
-
-    #pathInput = sys.argv[1]
-
-
-    #recognizer.detect_image()
-
-    # it is also possible to add detection confidence
-    # print('Detected labels in ' + photo)
-    # for label in response['Labels']:
-    #     print(label['Name'] + ' : ' + str(label['Confidence']))
