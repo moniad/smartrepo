@@ -38,23 +38,23 @@ class VideoParser:
             self.video_channel.basic_consume(queue=video_format,
                                              on_message_callback=self.callback)
 
-        self.audio_channel = self.connection.channel()
-        self.frame_channel = self.connection.channel()
+        #self.audio_channel = self.connection.channel()
+        #self.frame_channel = self.connection.channel()
 
-        self.audio_result = self.audio_channel.queue_declare(queue='', exclusive=True)
-        self.frame_result = self.frame_channel.queue_declare(queue='', exclusive=True)
+        self.audio_result = self.video_channel.queue_declare(queue='', exclusive=True)
+        #self.frame_result = self.frame_channel.queue_declare(queue='', exclusive=True)
 
         self.audio_callback_queue = self.audio_result.method.queue
-        self.frame_callback_queue = self.frame_result.method.queue
+        #self.frame_callback_queue = self.frame_result.method.queue
 
-        self.audio_channel.basic_consume(
+        self.video_channel.basic_consume(
             queue=self.audio_callback_queue,
             on_message_callback=self.on_audio_response,
             auto_ack=True)
-        self.frame_channel.basic_consume(
-            queue=self.frame_callback_queue,
-            on_message_callback=self.on_frame_response,
-            auto_ack=True)
+        # self.frame_channel.basic_consume(
+        #     queue=self.frame_callback_queue,
+        #     on_message_callback=self.on_frame_response,
+        #     auto_ack=True)
 
         self.audio_response = ""
         self.frame_response = ""
@@ -124,11 +124,11 @@ class VideoParser:
         self.parse()
 
         # send audio to audio parser and get results
-        rel_audio_path = str(parser.audioPath.relative_to(*parser.audioPath.parts[:1]))
+        rel_audio_path = str(self.audioPath.relative_to(*self.audioPath.parts[:1]))
         # TODO delete the next 2 lines before merging
         rel_audio_path = "/".join(rel_audio_path.split("\\"))
         print(rel_audio_path)
-        self.audio_channel.basic_publish(
+        self.video_channel.basic_publish(
             exchange='',
             routing_key='wav',
             properties=pika.BasicProperties(
@@ -145,7 +145,7 @@ class VideoParser:
         #         reply_to=self.frame_callback_queue,
         #         correlation_id=self.corr_id,
         #     ),
-        #     body=parser.framesFolder.encode('utf-8'))
+        #     body=self.framesFolder.encode('utf-8'))
 
         while len(self.audio_response) == 0:  # or len(self.frame_response) == 0:
             self.connection.process_data_events()
@@ -157,7 +157,7 @@ class VideoParser:
             routing_key=properties.reply_to,
             properties=pika.BasicProperties(),
             body=full_transcript.encode('utf-8'))
-
+        print(full_transcript)
         self.remove_directories()
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -174,3 +174,6 @@ if __name__ == "__main__":
 
     print(' [*] Waiting for messages.')
     parser.video_channel.start_consuming()
+
+    # parser.audio_channel.start_consuming()
+    # parser.frame_channel.start_consuming()
