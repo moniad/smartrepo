@@ -173,7 +173,7 @@ services:
     depends_on:
       smart-repo-rabbitmq:
         condition: service_healthy
-        
+
   smart-repo-xls-xlsx:
     build:
       context: ../parsers/xls_xlsx
@@ -187,8 +187,24 @@ services:
       - ../storage:/storage
     depends_on:
       smart-repo-rabbitmq:
-        condition: service_healthy        
-        
+        condition: service_healthy
+
+  smart-repo-lang-detect:
+    build:
+      context: ../language-detection
+    image: smart-repo-lang-detect:latest
+    ports:
+      - 10000:10000
+    restart: unless-stopped
+    networks:
+      rabbit-network:
+    volumes:
+      - ../storage:/storage
+    depends_on:
+      smart-repo-rabbitmq:
+        condition: service_healthy
+
+
 networks:
   rabbit-network:
   smart-repo-network:
