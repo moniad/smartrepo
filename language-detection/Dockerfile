@@ -6,4 +6,4 @@ COPY . .
 COPY src/main/golang/* ./
 
 EXPOSE 10000
-ENTRYPOINT go run LanguageDetector.go
+ENTRYPOINT go run LanguageDetection.go

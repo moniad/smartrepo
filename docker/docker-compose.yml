@@ -191,7 +191,7 @@ services:
 
   smart-repo-lang-detect:
     build:
-      context: ../utils/lang_detect
+      context: ../language-detection
     image: smart-repo-lang-detect:latest
     ports:
       - 10000:10000

@@ -8,12 +8,12 @@ import (
 	"github.com/abadojack/whatlanggo"
 )
 
-type LanguageDetectorPack struct {
+type LanguageDetectionPack struct {
     Phrase string
 }
 
-func languageDetectorService(w http.ResponseWriter, r *http.Request) {
-    var pack LanguageDetectorPack
+func languageDetectionService(w http.ResponseWriter, r *http.Request) {
+    var pack LanguageDetectionPack
     err := json.NewDecoder(r.Body).Decode(&pack)
     if err != nil {
         http.Error(w, err.Error(), http.StatusBadRequest)
@@ -25,8 +25,8 @@ func languageDetectorService(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRequests() {
-    http.HandleFunc("/langdetect", languageDetectorService)
-    fmt.Println("Language Detector Service started.")
+    http.HandleFunc("/langdetect", languageDetectionService)
+    fmt.Println("Language Detection Service started.")
     log.Fatal(http.ListenAndServe(":10000", nil))
 }
 
