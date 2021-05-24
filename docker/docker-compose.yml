@@ -177,9 +177,9 @@ services:
   smart-repo-lang-detect:
     build:
       context: ../utils/lang_detect
-      args:
-        - RABBITMQ_HOST=${RABBITMQ_HOST}
     image: smart-repo-lang-detect:latest
+    ports:
+      - 10000:10000
     restart: unless-stopped
     networks:
       rabbit-network:
