@@ -11,18 +11,18 @@ import shutil
 class VideoParser:
     def __init__(self):
         # file parameters
-        self.pathIn = ""
-        self.pathOut = pathlib.Path('../../storage')
+        self.pathIn = pathlib.Path('storage')
+        self.pathOut = pathlib.Path('storage')
         self.count = 0
         self.vidCap = None
         self.success, self.image = None, None
-        self.video_formats = ["mp4", "mov", "wmv", "avi", "mpeg"]
+        self.video_formats = [".mp4", ".mov", ".wmv", ".avi", ".mpeg"]
         self.fileName = ""
         self.framesFolder = None
         self.audioFolder = None
         self.audioPath = None
 
-        if len(sys.argv) >1:
+        if len(sys.argv) > 1:
             rabbit_host = sys.argv[1]
         else:
             rabbit_host = "localhost"
@@ -30,24 +30,22 @@ class VideoParser:
         # RabbitMQ initialization
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(host=rabbit_host, port=5672))
-        self.video_channel = self.connection.channel()
-        self.video_channel.basic_qos(prefetch_count=1)
+        self.channel = self.connection.channel()
+        self.channel.basic_qos(prefetch_count=1)
 
         for video_format in self.video_formats:
-            self.video_channel.queue_declare(queue=video_format)
-            self.video_channel.basic_consume(queue=video_format,
-                                             on_message_callback=self.callback)
+            ext = video_format.split(".")[-1]
+            self.channel.queue_declare(queue=ext)
+            self.channel.basic_consume(queue=ext,
+                                       on_message_callback=self.callback)
 
-        #self.audio_channel = self.connection.channel()
-        #self.frame_channel = self.connection.channel()
-
-        self.audio_result = self.video_channel.queue_declare(queue='', exclusive=True)
-        #self.frame_result = self.frame_channel.queue_declare(queue='', exclusive=True)
+        self.audio_result = self.channel.queue_declare(queue='', exclusive=True)
+        # self.frame_result = self.channel.queue_declare(queue='', exclusive=True)
 
         self.audio_callback_queue = self.audio_result.method.queue
-        #self.frame_callback_queue = self.frame_result.method.queue
+        # self.frame_callback_queue = self.frame_result.method.queue
 
-        self.video_channel.basic_consume(
+        self.channel.basic_consume(
             queue=self.audio_callback_queue,
             on_message_callback=self.on_audio_response,
             auto_ack=True)
@@ -60,8 +58,8 @@ class VideoParser:
         self.frame_response = ""
 
     def set_paths(self, video_path):
-        self.pathIn = video_path
-        self.vidCap = cv2.VideoCapture(self.pathIn)
+        self.pathIn = pathlib.Path(self.pathIn, video_path)
+        self.vidCap = cv2.VideoCapture(str(self.pathIn))
         self.success, self.image = self.vidCap.read()  # check if file exists
         self.fileName = str(ntpath.basename(self.pathIn))
         self.framesFolder = pathlib.Path(self.pathOut, self.fileName, "frames")
@@ -69,13 +67,9 @@ class VideoParser:
 
     def create_directories(self):
         # Creates temporary output directories for audio and frames
-        #print("Directory", str(Path(self.pathOut, self.fileName)))
-        print(self.framesFolder)
-        print(pathlib.Path(self.pathOut, self.fileName))
         try:
-            
-            os.mkdir(pathlib.Path(self.pathOut, self.fileName[0:-4])) #TODO fix this to create proper directories
-            os.mkdir(self.framesFolder) # TODO this will not be created in current implementation
+            os.mkdir(pathlib.Path(self.pathOut, self.fileName))
+            os.mkdir(self.framesFolder)
             os.mkdir(self.audioFolder)
         except FileExistsError:
             print("File with this name has already been parsed.")
@@ -99,14 +93,14 @@ class VideoParser:
 
     def extract_audio(self):
         # Creates a moviepy clip and extracts audio
-        video = mpe.VideoFileClip(self.pathIn)
+        video = mpe.VideoFileClip(str(self.pathIn))
         audio = video.audio
         self.audioPath = pathlib.Path(self.audioFolder, "audio.wav")
-        audio.write_audiofile(self.audioPath)
+        audio.write_audiofile(str(self.audioPath))
 
     def parse(self):
         # Checks if the file is a video file and invokes frame and audio extraction
-        ext = self.pathIn.split(".")[-1]
+        ext = self.pathIn.suffix
         if ext not in self.video_formats:
             print(f"Wrong file extension: {ext}", file=sys.stderr)
         else:
@@ -126,9 +120,9 @@ class VideoParser:
         # send audio to audio parser and get results
         rel_audio_path = str(self.audioPath.relative_to(*self.audioPath.parts[:1]))
         # TODO delete the next 2 lines before merging
-        rel_audio_path = "/".join(rel_audio_path.split("\\"))
-        print(rel_audio_path)
-        self.video_channel.basic_publish(
+        # rel_audio_path = "/".join(rel_audio_path.split("\\"))
+        # print(rel_audio_path)
+        self.channel.basic_publish(
             exchange='',
             routing_key='wav',
             properties=pika.BasicProperties(
@@ -173,7 +167,4 @@ if __name__ == "__main__":
     parser = VideoParser()
 
     print(' [*] Waiting for messages.')
-    parser.video_channel.start_consuming()
-
-    # parser.audio_channel.start_consuming()
-    # parser.frame_channel.start_consuming()
+    parser.channel.start_consuming()
