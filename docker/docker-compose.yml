@@ -189,20 +189,7 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
-  smart-repo-image:
-    build:
-      context: ../parsers/image
-      args:
-        - RABBITMQ_HOST=${RABBITMQ_HOST}
-    image: smart-repo-image:latest
-    restart: unless-stopped
-    networks:
-      rabbit-network:
-    volumes:
-      - ../storage:/storage
-    depends_on:
-      smart-repo-rabbitmq:
-        condition: service_healthy
+
 networks:
   rabbit-network:
   smart-repo-network:
