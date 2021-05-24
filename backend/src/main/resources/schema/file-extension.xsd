@@ -26,6 +26,7 @@
             <xs:enumeration value="doc"/>
             <xs:enumeration value="docx"/>
             <xs:enumeration value="pptx"/>
+            <xs:enumeration value="ppt"/>
             <xs:enumeration value="odt"/>
             <xs:enumeration value="ods"/>
             <xs:enumeration value="odg"/>

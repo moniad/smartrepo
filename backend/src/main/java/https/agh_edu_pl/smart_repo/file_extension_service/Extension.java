@@ -58,6 +58,8 @@ public enum Extension {
     DOCX("docx"),
     @XmlEnumValue("pptx")
     PPTX("pptx"),
+    @XmlEnumValue("ppt")
+    PPTX("ppt"),
     @XmlEnumValue("odt")
     ODT("odt"),
     @XmlEnumValue("ods")
