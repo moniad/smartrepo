@@ -204,6 +204,7 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
+
 networks:
   rabbit-network:
   smart-repo-network:
