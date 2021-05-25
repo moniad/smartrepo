@@ -77,10 +77,10 @@ public class IndexerService {
             log.info("Index document response: '" + indexResponse + "'");
         } catch (IOException e) {
             log.error("Unexpected error while connecting to ElasticSearch (index document mappings)");
-            return new Result(ResultType.FAILURE);
+            return new Result(ResultType.FATAL_FAILURE);
         } catch (ElasticsearchStatusException e) {
             log.error("Cannot index document. Message: " + e.getMessage());
-            return new Result(ResultType.FAILURE);
+            return new Result(ResultType.FATAL_FAILURE);
         }
 
         return new Result(ResultType.SUCCESS);
@@ -95,10 +95,10 @@ public class IndexerService {
             log.info("Index response: " + deleteResponse);
         } catch (IOException e) {
             log.error("Unexpected error while connecting to ElasticSearch (delete from index)");
-            return new Result(ResultType.FAILURE, failureMessage);
+            return new Result(ResultType.FATAL_FAILURE, failureMessage);
         } catch (ElasticsearchStatusException e) {
             log.error("Cannot delete file from index. Message: " + e.getMessage());
-            return new Result(ResultType.FAILURE, failureMessage);
+            return new Result(ResultType.FATAL_FAILURE, failureMessage);
         }
 
         return new Result(ResultType.SUCCESS, String.format("File %s deleted successfully", document.getName()));
