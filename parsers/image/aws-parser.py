@@ -68,6 +68,9 @@ class ImageRecognition:
                     body=str(self.content))
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
+        self.response = []
+        self.content = []
+
 if __name__ == "__main__":
     recognizer = ImageRecognition()
     recognizer.image_channel.start_consuming()
