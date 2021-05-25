@@ -5,6 +5,7 @@ import pika
 import pathlib
 import os
 
+
 class ImageRecognition:
     def __init__(self):
         self.credentials_path = pathlib.Path('aws_credentials.json')
@@ -46,11 +47,7 @@ class ImageRecognition:
                 self.response=[]
 
 
-
     def callback(self, ch, method, properties, body):
-        self.audio_response = ""
-        self.frame_response = ""
-
         # run aws recognition
 
         tmp_path = str(body.decode())
@@ -59,7 +56,6 @@ class ImageRecognition:
 
         for label in self.response['Labels']:
             self.content.append(str(label['Name']))
-
 
         ch.basic_publish(
                     exchange='',
