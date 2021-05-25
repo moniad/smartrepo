@@ -15,7 +15,11 @@ public enum AcceptableFileExtension {
     zip("zip"),
     tar("tar"),
     gz("gz"),
-    wav("wav");
+    wav("wav"),
+    flac("flac"),
+    aac("aac"),
+    ogg("ogg"),
+    mp3("mp3");
 
     private final String name;
 
