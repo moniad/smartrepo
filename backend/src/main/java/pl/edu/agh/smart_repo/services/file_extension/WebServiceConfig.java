@@ -23,7 +23,7 @@ public class WebServiceConfig extends WsConfigurerAdapter {
         return new ServletRegistrationBean<>(servlet, "/ws/*");
     }
 
-    @Bean
+    @Bean("fileExtension")
     public DefaultWsdl11Definition defaultWsdl11Definition(XsdSchema fileExtensionSchema) {
         DefaultWsdl11Definition wsdl11Definition = new DefaultWsdl11Definition();
         wsdl11Definition.setPortTypeName("FileExtensionServicePort");

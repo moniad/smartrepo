@@ -1,0 +1,13 @@
+\section{Analiza tematu}
+\subsection{Motywacja}
+\paragraph{}Wybrany temat pozwoli rozszerzyć horyzonty w dziedzinie systemów agentowych oraz poznać nowe podejścia do uczenia maszynowego. . 
+
+\subsection{Plan pracy}
+\paragraph{}Praca została podzielona na kilka etapów, które pozwolą na jej usystematyzowanie.
+\begin{enumerate}
+    \item Wstęp teoretyczny 
+    \item scenariusze uczenia w systemach agentowych.
+    \item Implementacja projektu z wykorzystaniem wybranej metody.
+    \item Omówienie i weryfikacja działania zaimplementowanego systemu.
+\end{enumerate}
+\newpage
