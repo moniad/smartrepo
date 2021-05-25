@@ -1,0 +1,39 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="https://agh.edu.pl/smart-repo/file-extension-service"
+           targetNamespace="https://agh.edu.pl/smart-repo/file-extension-service" elementFormDefault="qualified">
+
+    <xs:element name="getFileExtensionRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="path" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="getFileExtensionResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="extension" type="tns:extension"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:simpleType name="extension">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="pdf"/>
+            <xs:enumeration value="xlsx"/>
+            <xs:enumeration value="xls"/>
+            <xs:enumeration value="txt"/>
+            <xs:enumeration value="doc"/>
+            <xs:enumeration value="docx"/>
+            <xs:enumeration value="pptx"/>
+            <xs:enumeration value="ppt"/>
+            <xs:enumeration value="odt"/>
+            <xs:enumeration value="ods"/>
+            <xs:enumeration value="odg"/>
+            <xs:enumeration value="zip"/>
+            <xs:enumeration value="tar"/>
+            <xs:enumeration value="gz"/>
+            <xs:enumeration value="wav"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

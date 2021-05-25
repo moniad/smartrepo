@@ -3,11 +3,23 @@ package pl.edu.agh.smart_repo.services.index;
 import com.alibaba.fastjson.JSON;
 import io.vavr.control.Option;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.client.indices.CreateIndexResponse;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,42 +27,35 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
 import org.springframework.data.elasticsearch.client.RestClients;
 import org.springframework.stereotype.Service;
-import pl.edu.agh.smart_repo.common.document_fields.DocumentFields;
+import pl.edu.agh.smart_repo.common.document_fields.DocumentField;
 import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
 import pl.edu.agh.smart_repo.common.file.FileInfo;
 import pl.edu.agh.smart_repo.common.response.Result;
 import pl.edu.agh.smart_repo.common.response.ResultType;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
-import pl.edu.agh.smart_repo.services.directory_tree.util.FileInfoService;
 
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import static pl.edu.agh.smart_repo.common.document_fields.DocumentField.CONTENTS;
+import static pl.edu.agh.smart_repo.common.document_fields.DocumentField.PATH;
 
 @Slf4j
 @Service
 public class IndexerService {
     private final String indexWithHost;
     private final String indexName;
-    private final HttpClient client;
     private final RestHighLevelClient restHighLevelClient;
-    private final FileInfoService fileInfoService;
 
     @Autowired
     public IndexerService(ConfigurationFactory configurationFactory,
-                          FileInfoService fileInfoService,
                           @Value("${elastic.index.number_of_shards}") int number_of_shards,
                           @Value("${elastic.index.number_of_replicas}") int number_of_replicas) {
-        this.fileInfoService = fileInfoService;
         log.info("Init indexer service");
-
-        client = HttpClient.newHttpClient();
 
         ClientConfiguration clientConfiguration = ClientConfiguration.builder()
                 .connectedTo("elasticsearch:9200")
@@ -61,25 +66,20 @@ public class IndexerService {
         indexName = configurationFactory.getIndex();
         indexWithHost = configurationFactory.getElasticSearchAddress() + "/" + configurationFactory.getIndex();
 
-        createAndSendInitIndexRequest(number_of_shards, number_of_replicas);
-        createAndSendInitIndexMappingRequest();
+        createInitIndexAndMappingRequest(number_of_shards, number_of_replicas);
     }
 
     public Result indexDocument(DocumentStructure documentStructure) {
-        String requestBody = createIndexDocumentRequest(documentStructure);
-        HttpRequest request = createRequest(indexWithHost + "/" + "_doc", "POST", requestBody);
-
-        log.info("Send index document: '" + requestBody + "'");
-
+        IndexRequest indexDocumentRequest = createIndexDocumentRequest(documentStructure);
+        log.info("Send index document: '" + indexDocumentRequest + "'");
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            log.info("Index response: " + response);
-            log.info("Response body: " + response.body());
-        } catch (ConnectException e) {
-            log.error("Error while indexing document (document already exist)");
-            return new Result(ResultType.FAILURE);
-        } catch (InterruptedException | IOException e) {
+            IndexResponse indexResponse = restHighLevelClient.index(indexDocumentRequest, RequestOptions.DEFAULT);
+            log.info("Index document response: '" + indexResponse + "'");
+        } catch (IOException e) {
             log.error("Unexpected error while connecting to ElasticSearch (index document mappings)");
+            return new Result(ResultType.FAILURE);
+        } catch (ElasticsearchStatusException e) {
+            log.error("Cannot index document. Message: " + e.getMessage());
             return new Result(ResultType.FAILURE);
         }
 
@@ -87,21 +87,17 @@ public class IndexerService {
     }
 
     public Result deleteFileFromIndex(DocumentStructure document) {
-        //TODO: add more conditions to query maybe creation date?
-        String requestBody = createDeleteFileFromIndexRequest(document);
-        HttpRequest request = createRequest(indexWithHost + "/" + "_delete_by_query", "POST", requestBody);
-
-        log.info("Delete index for document: '" + requestBody + "'");
-        var failureMessage = String.format("Cannot delete file %s from index", document.getName());
+        DeleteByQueryRequest deleteFileFromIndexRequest = createDeleteFileFromIndexRequest(document);
+        log.info("Delete file request: '" + deleteFileFromIndexRequest.getSearchRequest().source().toString() + "'");
+        String failureMessage = String.format("Cannot delete file %s from index", document.getName());
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            log.info("Index response: " + response);
-            log.info("Response body: " + response.body());
-        } catch (ConnectException e) {
-            log.error("Error while indexing document: cannot connect with ElasticSearch");
-            return new Result(ResultType.FAILURE, failureMessage);
-        } catch (InterruptedException | IOException e) {
+            BulkByScrollResponse deleteResponse = restHighLevelClient.deleteByQuery(deleteFileFromIndexRequest, RequestOptions.DEFAULT);
+            log.info("Index response: " + deleteResponse);
+        } catch (IOException e) {
             log.error("Unexpected error while connecting to ElasticSearch (delete from index)");
+            return new Result(ResultType.FAILURE, failureMessage);
+        } catch (ElasticsearchStatusException e) {
+            log.error("Cannot delete file from index. Message: " + e.getMessage());
             return new Result(ResultType.FAILURE, failureMessage);
         }
 
@@ -114,102 +110,92 @@ public class IndexerService {
         try {
             SearchRequest searchRequest = new SearchRequest(indexName);
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-            searchSourceBuilder.query(QueryBuilders.matchPhraseQuery("contents", phrase));
+            searchSourceBuilder.query(QueryBuilders.matchPhraseQuery(CONTENTS.toString(), phrase));
             searchRequest.source(searchSourceBuilder);
 
             log.info("Search query: '" + searchRequest.source().toString() + "'");
 
             SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+            log.info("Search response: [");
 
             SearchHit[] searchHits = searchResponse.getHits().getHits();
             List<FileInfo> results = Arrays.stream(searchHits)
                     .map(hit -> JSON.parseObject(hit.getSourceAsString(), DocumentStructure.class))
+                    .peek(documentStructure -> log.info("Search hit: '" + documentStructure.getPath() + "'"))
                     .map(FileInfo::of)
                     .collect(Collectors.toList());
+            log.info("]");
             return Option.of(results);
         } catch (IOException e) {
             log.error("Error while searching index for phrase: " + phrase);
+        } catch (ElasticsearchStatusException e) {
+            log.error("Cannot search document. Message: " + e.getMessage());
         }
         return foundFiles;
     }
 
-    private void createAndSendInitIndexRequest(int number_of_shards, int number_of_replicas) {
-        String requestBody = String.format("{\"settings\":{\"number_of_shards\":%d,\"number_of_replicas\":%d}}",
-                number_of_shards, number_of_replicas);
+    private void createInitIndexAndMappingRequest(int numberOfShards, int numberOfReplicas) {
+        CreateIndexRequest request = createIndexRequest(numberOfShards, numberOfReplicas);
+        XContentBuilder builder = createMappingRequest();
+        request.mapping(builder);
 
-        log.info("Send init index: '" + requestBody + "', address: " + indexWithHost);
-
-        HttpRequest request = createRequest(indexWithHost, "PUT", requestBody);
+        log.info("Send init index: '" + request + "', address: " + indexWithHost);
 
         try {
-            client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (ConnectException e) {
+            CreateIndexResponse createIndexResponse = restHighLevelClient.indices().create(request, RequestOptions.DEFAULT);
+            log.info("Init index response: '" + createIndexResponse + "'");
+        } catch (ElasticsearchException e) {
             log.error("Error while setting up index (index already exists)");
-        } catch (InterruptedException | IOException e) {
+        } catch (IOException e) {
             log.error("Unexpected error while connecting to ElasticSearch (init index)");
         }
     }
 
-    private void createAndSendInitIndexMappingRequest() {
-        String requestBody = "{\n" +
-                "  \"properties\" : {\n" +
-                "      \"name\" : { \"type\" : \"text\" },\n" +
-                "      \"path\" : { \"type\" : \"text\" },\n" +
-                "      \"contents\" : { \"type\" : \"text\" },\n" +
-                "      \"keywords\" : { \"type\" : \"text\" },\n" +
-                "      \"creation_date\" : { \"type\" : \"text\" },\n" +
-                "      \"modification_date\" : { \"type\" : \"text\" },\n" +
-                "      \"language\" : { \"type\" : \"text\" }\n" +
-                "  }\n" +
-                "}";
+    private CreateIndexRequest createIndexRequest(int numberOfShards, int numberOfReplicas) {
+        CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName);
+        createIndexRequest.settings(Settings.builder()
+                .put("index.number_of_shards", numberOfShards)
+                .put("index.number_of_replicas", numberOfReplicas)
+        );
+        return createIndexRequest;
+    }
 
-        log.info("Send init index mapping: '" + requestBody + "'");
-
-        HttpRequest request = createRequest(indexWithHost + "/" + "_mapping", "PUT", requestBody);
-
+    private XContentBuilder createMappingRequest() {
+        XContentBuilder builder = null;
         try {
-            client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (ConnectException e) {
-            log.error("Error while setting up index mapping (mapping already exist)");
-        } catch (InterruptedException | IOException e) {
-            log.error("Unexpected error while connecting to ElasticSearch (init mappings");
+            builder = XContentFactory.jsonBuilder();
+            builder.startObject();
+            {
+                builder.startObject("properties");
+                {
+                    for (DocumentField documentField : DocumentField.values()) {
+                        builder.startObject(documentField.toString());
+                        {
+                            builder.field("type", "text");
+                        }
+                        builder.endObject();
+                    }
+                }
+                builder.endObject();
+            }
+            builder.endObject();
+        } catch (IOException e) {
+            log.error("Error while creating index mapping request");
         }
+        return builder;
     }
 
-    private HttpRequest createRequest(String uriString, String method, String requestBody) {
-        return HttpRequest.newBuilder(URI.create(uriString))
-                .header("Content-Type", "application/json")
-                .method(method, HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
+    private IndexRequest createIndexDocumentRequest(DocumentStructure documentStructure) {
+        Map<String, Object> jsonMap = new HashMap<>();
+        for (DocumentField documentField : DocumentField.values()) {
+            jsonMap.put(documentField.toString(), documentStructure.getByDocumentField(documentField));
+        }
+        return new IndexRequest(indexName).source(jsonMap);
     }
 
-    private String createIndexDocumentRequest(DocumentStructure documentStructure) {
-        return String.format("{\n" +
-                        "  \"name\": \"%s\",\n" +
-                        "  \"path\": \"%s\",\n" +
-                        "  \"contents\": \"%s\",\n" +
-                        "  \"keywords\": \"%s\",\n" +
-                        "  \"creation_date\": \"%s\",\n" +
-                        "  \"modification_date\": \"%s\",\n" +
-                        "  \"language\": \"%s\"\n" +
-                        "}",
-                documentStructure.getByDocumentField(DocumentFields.NAME),
-                documentStructure.getByDocumentField(DocumentFields.PATH),
-                documentStructure.getByDocumentField(DocumentFields.CONTENTS),
-                documentStructure.getByDocumentField(DocumentFields.KEYWORDS),
-                documentStructure.getByDocumentField(DocumentFields.CREATION_DATE),
-                documentStructure.getByDocumentField(DocumentFields.MODIFICATION_DATE),
-                documentStructure.getByDocumentField(DocumentFields.LANGUAGE));
-    }
-
-    private String createDeleteFileFromIndexRequest(DocumentStructure documentStructure) {
-        return String.format("{\n" +
-                        "  \"query\": {\n" +
-                        "    \"match\": {\n" +
-                        "      \"path\": \"%s\"\n" +
-                        "    }\n" +
-                        "  }\n" +
-                        "}",
-                documentStructure.getByDocumentField(DocumentFields.PATH));
+    private DeleteByQueryRequest createDeleteFileFromIndexRequest(DocumentStructure documentStructure) { //todo: this needs to be fixed. File is not deleted from index
+        DeleteByQueryRequest request = new DeleteByQueryRequest(indexName);
+        request.setQuery(new TermQueryBuilder(PATH.toString(), documentStructure.getPath()));
+        return request;
     }
 }
