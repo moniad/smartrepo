@@ -15,7 +15,10 @@ public enum AcceptableFileExtension {
     zip("zip"),
     tar("tar"),
     gz("gz"),
-    wav("wav");
+    wav("wav"),
+    jpg("jpg"),
+    png("png"),
+    mp4("mp4");
 
     private final String name;
 

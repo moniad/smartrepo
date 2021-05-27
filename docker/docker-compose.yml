@@ -174,12 +174,12 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
-  smart-repo-xls-xlsx:
+  smart-repo-video:
     build:
-      context: ../parsers/xls_xlsx
+      context: ../parsers/video
       args:
         - RABBITMQ_HOST=${RABBITMQ_HOST}
-    image: smart-repo-xls-xlsx:latest
+    image: smart-repo-video:latest
     restart: unless-stopped
     networks:
       rabbit-network:
@@ -189,12 +189,12 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
-  smart-repo-lang-detect:
+  smart-repo-image:
     build:
-      context: ../language-detection
-    image: smart-repo-lang-detect:latest
-    ports:
-      - 10000:10000
+      context: ../parsers/image
+      args:
+        - RABBITMQ_HOST=${RABBITMQ_HOST}
+    image: smart-repo-image:latest
     restart: unless-stopped
     networks:
       rabbit-network:
@@ -203,8 +203,6 @@ services:
     depends_on:
       smart-repo-rabbitmq:
         condition: service_healthy
-
-
 networks:
   rabbit-network:
   smart-repo-network:
