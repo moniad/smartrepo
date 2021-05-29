@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -44,20 +45,26 @@ public class FileUploadService {
 
         File newFile = new File(filePath.toUri());
 
+        if (newFile.exists() && !newFile.isDirectory()) {
+            log.error("Error: file already exists.");
+            String errorMsg = "Error: File \"" + fileName + "\" already exists in this directory.";
+            return new Result(ResultType.FAILURE, errorMsg, new FileAlreadyExistsException(fileName));
+        }
+
         try (FileOutputStream fos = new FileOutputStream(newFile)) {
             fos.write(file.getBytes());
         } catch (FileNotFoundException e) {
             log.error("Error: file cannot be created.");
-            return new Result(ResultType.FAILURE, e);
+            return new Result(ResultType.FATAL_FAILURE, e);
         } catch (IOException e) {
             log.error("Error while saving file.");
-            return new Result(ResultType.FAILURE, e);
+            return new Result(ResultType.FATAL_FAILURE, e);
         }
 
         String parsed = parserService.parse(newFile, Paths.get(path, fileName).toString());
 
         if (parsed == null) {
-            return new Result(ResultType.FAILURE, "Failed to parse file.");
+            return new Result(ResultType.FATAL_FAILURE, "Failed to parse file.");
         }
 
         parsed = escapeCharMapper.mapAll(parsed).trim();
