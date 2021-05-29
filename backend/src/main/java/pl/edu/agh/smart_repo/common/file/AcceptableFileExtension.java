@@ -19,7 +19,9 @@ public enum AcceptableFileExtension {
     flac("flac"),
     aac("aac"),
     ogg("ogg"),
-    mp3("mp3");
+    mp3("mp3"),
+    jpg("jpg"),
+    png("png");
 
     private final String name;
 

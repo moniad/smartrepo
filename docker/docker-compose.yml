@@ -189,12 +189,12 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
-  smart-repo-audio-converter:
+  smart-repo-video:
     build:
-      context: ../parsers/audio_converter
+      context: ../parsers/video
       args:
         - RABBITMQ_HOST=${RABBITMQ_HOST}
-    image: smart-repo-audio-converter:latest
+    image: smart-repo-video:latest
     restart: unless-stopped
     networks:
       rabbit-network:
@@ -219,6 +219,35 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
+  smart-repo-audio-converter:
+    build:
+      context: ../parsers/audio_converter
+      args:
+        - RABBITMQ_HOST=${RABBITMQ_HOST}
+    image: smart-repo-audio-converter:latest
+    restart: unless-stopped
+    networks:
+      rabbit-network:
+    volumes:
+      - ../storage:/storage
+    depends_on:
+      smart-repo-rabbitmq:
+        condition: service_healthy
+
+  smart-repo-image:
+    build:
+      context: ../parsers/image
+      args:
+        - RABBITMQ_HOST=${RABBITMQ_HOST}
+    image: smart-repo-image:latest
+    restart: unless-stopped
+    networks:
+      rabbit-network:
+    volumes:
+      - ../storage:/storage
+    depends_on:
+      smart-repo-rabbitmq:
+        condition: service_healthy
 
 networks:
   rabbit-network:
