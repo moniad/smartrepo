@@ -8,9 +8,10 @@ from pydub import AudioSegment
 
 class AudioConverter:
     def __init__(self):
-        self.pathIn = pathlib.Path('../../storage')
+        self.storagePath = pathlib.Path('../../storage')
+        self.pathIn = None
         self.fileName = ""
-        self.pathOut = pathlib.Path('../../storage')
+        self.pathOut = None
         self.accepted_formats = [".mp3", ".aac", ".flac", ".ogg"]
         self.ext = ""
 
@@ -23,8 +24,9 @@ class AudioConverter:
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(host=rabbit_host, port=5672))
         self.channel = self.connection.channel()
+        self.reply_to = ""
 
-        self.wav_result = self.channel.queue_declare(queue='amq.rabbitmq.reply-to')
+        self.wav_result = self.channel.queue_declare(queue='', exclusive=True)
         self.wav_callback_queue = self.wav_result.method.queue
         self.channel.basic_consume(
             queue=self.wav_callback_queue,
@@ -36,13 +38,13 @@ class AudioConverter:
         for audio_format in self.accepted_formats:
             ext = audio_format.split(".")[-1]
             self.channel.queue_declare(queue=ext)
-            self.channel.basic_consume(queue=ext, on_message_callback=self.callback, auto_ack=True)
+            self.channel.basic_consume(queue=ext, on_message_callback=self.callback, auto_ack=False)
 
     def set_path_and_ext(self, received_path):
-        self.pathIn = pathlib.Path(self.pathIn, received_path)
+        self.pathIn = pathlib.Path(self.storagePath, received_path)
         self.fileName = str(ntpath.basename(self.pathIn)).split(".")[0]
         self.ext = self.pathIn.suffix
-        self.pathOut = pathlib.Path(self.pathOut, self.fileName+".wav")
+        self.pathOut = pathlib.Path(self.storagePath, self.fileName+".wav")
 
     def create_tmp_file(self):
         if not os.path.exists(self.pathOut):
@@ -55,29 +57,31 @@ class AudioConverter:
     def callback(self, ch, method, properties, body):
         self.set_path_and_ext(body.decode())
         self.create_tmp_file()
+        self.reply_to = properties.reply_to
+
+        print(f"Parsing file:{self.fileName+self.ext}")
         audio = AudioSegment.from_file(str(self.pathIn), self.ext.split(".")[-1])
         audio.export(self.pathOut, "wav")
         rel_audio_path = self.fileName+".wav"
         self.channel.basic_publish(
             exchange='',
             routing_key='wav',
-            properties=pika.BasicProperties(reply_to='amq.rabbitmq.reply-to'),
+            properties=pika.BasicProperties(reply_to=self.wav_callback_queue),
             body=rel_audio_path.encode('utf-8'))
 
-        while len(self.wav_response) == 0:
-            self.connection.process_data_events()
-
-        ch.basic_publish(
-            exchange='',
-            routing_key=properties.reply_to,
-            properties=pika.BasicProperties(),
-            body=self.wav_response.encode('utf-8'))
-
-        self.delete_tmp_file()
+        ch.basic_ack(delivery_tag=method.delivery_tag)
 
     def on_wav_response(self, ch, method, properties, body):
         self.wav_response = body.decode()
+        print("Received result:")
+        print(self.wav_response)
         ch.basic_ack(delivery_tag=method.delivery_tag)
+        ch.basic_publish(
+            exchange='',
+            routing_key=self.reply_to,
+            properties=pika.BasicProperties(),
+            body=self.wav_response.encode('utf-8'))
+        self.delete_tmp_file()
 
 
 if __name__ == "__main__":
