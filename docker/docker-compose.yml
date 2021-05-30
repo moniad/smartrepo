@@ -159,12 +159,12 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
-  smart-repo-doc-docx:
+  smart-repo-ppt-pptx:
     build:
-      context: ../parsers/doc_docx
+      context: ../parsers/ppt_pptx
       args:
         - RABBITMQ_HOST=${RABBITMQ_HOST}
-    image: smart-repo-doc-docx:latest
+    image: smart-repo-ppt-pptx:latest
     restart: unless-stopped
     networks:
       rabbit-network:
@@ -174,12 +174,12 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
-  smart-repo-ppt-pptx:
+  smart-repo-doc-docx:
     build:
-      context: ../parsers/ppt_pptx
+      context: ../parsers/doc_docx
       args:
         - RABBITMQ_HOST=${RABBITMQ_HOST}
-    image: smart-repo-ppt-pptx:latest
+    image: smart-repo-doc-docx:latest
     restart: unless-stopped
     networks:
       rabbit-network:
