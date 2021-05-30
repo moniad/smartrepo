@@ -129,12 +129,42 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
-  smart-repo-archives:
+#  smart-repo-archives:
+#    build:
+#      context: ../parsers/archives
+#      args:
+#        - RABBITMQ_HOST=${RABBITMQ_HOST}
+#    image: smart-repo-archives:latest
+#    restart: unless-stopped
+#    networks:
+#      rabbit-network:
+#    volumes:
+#      - ../storage:/storage
+#    depends_on:
+#      smart-repo-rabbitmq:
+#        condition: service_healthy
+
+  smart-repo-xls-xlsx:
     build:
-      context: ../parsers/archives
+      context: ../parsers/xls_xlsx
       args:
         - RABBITMQ_HOST=${RABBITMQ_HOST}
-    image: smart-repo-archives:latest
+    image: smart-repo-xls-xlsx:latest
+    restart: unless-stopped
+    networks:
+      rabbit-network:
+    volumes:
+      - ../storage:/storage
+    depends_on:
+      smart-repo-rabbitmq:
+        condition: service_healthy
+
+  smart-repo-ppt-pptx:
+    build:
+      context: ../parsers/ppt_pptx
+      args:
+        - RABBITMQ_HOST=${RABBITMQ_HOST}
+    image: smart-repo-ppt-pptx:latest
     restart: unless-stopped
     networks:
       rabbit-network:
@@ -159,12 +189,12 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
-  smart-repo-ppt-pptx:
+  smart-repo-python-archive:
     build:
-      context: ../parsers/ppt_pptx
+      context: ../parsers/python_archive
       args:
         - RABBITMQ_HOST=${RABBITMQ_HOST}
-    image: smart-repo-ppt-pptx:latest
+    image: smart-repo-python-archive:latest
     restart: unless-stopped
     networks:
       rabbit-network:
