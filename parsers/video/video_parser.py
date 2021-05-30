@@ -11,8 +11,8 @@ import shutil
 class VideoParser:
     def __init__(self):
         # file parameters
-        self.pathIn = pathlib.Path('storage')
-        self.pathOut = pathlib.Path('storage')
+        self.pathIn = pathlib.Path('../../storage')
+        self.pathOut = pathlib.Path('../../storage')
         self.count = 0
         self.vidCap = None
         self.success, self.image = None, None
@@ -21,6 +21,7 @@ class VideoParser:
         self.framesFolder = None
         self.audioFolder = None
         self.audioPath = None
+        self.ext = ""
 
         if len(sys.argv) > 1:
             rabbit_host = sys.argv[1]
@@ -31,37 +32,46 @@ class VideoParser:
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(host=rabbit_host, port=5672))
         self.channel = self.connection.channel()
+        self.audio_channel = self.connection.channel()
+        self.frame_channel = self.connection.channel()
         self.channel.basic_qos(prefetch_count=1)
+        self.audio_channel.basic_qos(prefetch_count=1)
+        self.frame_channel.basic_qos(prefetch_count=1)
+
+        self.reply_to = ""
 
         for video_format in self.video_formats:
             ext = video_format.split(".")[-1]
             self.channel.queue_declare(queue=ext)
             self.channel.basic_consume(queue=ext,
-                                       on_message_callback=self.callback)
+                                       on_message_callback=self.callback,
+                                       auto_ack=False)
 
-        self.audio_result = self.channel.queue_declare(queue='', exclusive=True)
-        # self.frame_result = self.channel.queue_declare(queue='', exclusive=True)
+        self.audio_result = self.audio_channel.queue_declare(queue='', exclusive=True)
+        self.frame_result = self.frame_channel.queue_declare(queue='', exclusive=True)
 
         self.audio_callback_queue = self.audio_result.method.queue
-        # self.frame_callback_queue = self.frame_result.method.queue
+        self.frame_callback_queue = self.frame_result.method.queue
 
-        self.channel.basic_consume(
+        self.audio_channel.basic_consume(
             queue=self.audio_callback_queue,
             on_message_callback=self.on_audio_response,
-            auto_ack=True)
-        # self.frame_channel.basic_consume(
-        #     queue=self.frame_callback_queue,
-        #     on_message_callback=self.on_frame_response,
-        #     auto_ack=True)
+            auto_ack=False)
+
+        self.frame_channel.basic_consume(
+            queue=self.frame_callback_queue,
+            on_message_callback=self.on_frame_response,
+            auto_ack=False)
 
         self.audio_response = ""
         self.frame_response = ""
+        self.n_frames_parsed = 0
 
     def set_paths(self, video_path):
         self.pathIn = pathlib.Path(self.pathIn, video_path)
         self.vidCap = cv2.VideoCapture(str(self.pathIn))
         self.success, self.image = self.vidCap.read()  # check if file exists
-        self.fileName = str(ntpath.basename(self.pathIn))
+        self.fileName = str(ntpath.basename(self.pathIn)).split(".")[0]
         self.framesFolder = pathlib.Path(self.pathOut, self.fileName, "frames")
         self.audioFolder = pathlib.Path(self.pathOut, self.fileName, "audio")
 
@@ -95,7 +105,7 @@ class VideoParser:
         # Creates a moviepy clip and extracts audio
         video = mpe.VideoFileClip(str(self.pathIn))
         audio = video.audio
-        self.audioPath = pathlib.Path(self.audioFolder, "audio.wav")
+        self.audioPath = pathlib.Path(self.audioFolder, self.fileName+".wav")
         audio.write_audiofile(str(self.audioPath))
 
     def parse(self):
@@ -111,55 +121,62 @@ class VideoParser:
     def callback(self, ch, method, properties, body):
         self.audio_response = ""
         self.frame_response = ""
+        self.n_frames_parsed = 0
+        self.reply_to = properties.reply_to
 
         # parse received video
-        print(f"Received path: {body.decode()}")
+        print(f"Parsing file: {body.decode()}")
         self.set_paths(body.decode())
         self.parse()
 
         # send audio to audio parser and get results
-        rel_audio_path = str(self.audioPath.relative_to(*self.audioPath.parts[:1]))
-        # TODO delete the next 2 lines before merging
-        # rel_audio_path = "/".join(rel_audio_path.split("\\"))
-        # print(rel_audio_path)
-        self.channel.basic_publish(
+        rel_audio_path = str(pathlib.Path(self.fileName, "audio", self.fileName+".wav"))
+        print('Sending audio file to audio queue')
+        self.audio_channel.basic_publish(
             exchange='',
             routing_key='wav',
             properties=pika.BasicProperties(
-                reply_to=self.audio_callback_queue,
+                reply_to=self.audio_callback_queue
             ),
             body=rel_audio_path.encode('utf-8'))
 
         # send frames to image parser and get results
-        # TODO add when image parser is available
-        # self.frame_channel.basic_publish(
-        #     exchange='',
-        #     routing_key='jpg',
-        #     properties=pika.BasicProperties(
-        #         reply_to=self.frame_callback_queue,
-        #         correlation_id=self.corr_id,
-        #     ),
-        #     body=self.framesFolder.encode('utf-8'))
+        # FIXME uncomment when image parser is fixed
+        # rel_frames_path = str(pathlib.Path(self.fileName, "frames"))
+        print('Sending frames to image queue')
+        # for frame in os.listdir(self.framesFolder):
+        #     self.frame_channel.basic_publish(
+        #         exchange='',
+        #         routing_key='jpg',
+        #         properties=pika.BasicProperties(
+        #             reply_to=self.frame_callback_queue
+        #         ),
+        #         body=(rel_frames_path+"/"+frame).encode('utf-8'))
 
-        while len(self.audio_response) == 0:  # or len(self.frame_response) == 0:
-            self.connection.process_data_events()
-
-        full_transcript = str(self.audio_response + self.frame_response)
-
-        ch.basic_publish(
-            exchange='',
-            routing_key=properties.reply_to,
-            properties=pika.BasicProperties(),
-            body=full_transcript.encode('utf-8'))
-        print(full_transcript)
-        self.remove_directories()
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     def on_audio_response(self, ch, method, properties, body):
-        self.audio_response = body
+        self.audio_response = body.decode()
+        # FIXME delete this when frames work
+        self.channel.basic_publish(
+            exchange='',
+            routing_key=self.reply_to,
+            body=self.audio_response.encode('utf-8'))
+        self.remove_directories()
 
     def on_frame_response(self, ch, method, properties, body):
-        self.frame_response = body
+        self.frame_response += body.decode()
+        # checking if all frames of this video have been parsed
+        self.n_frames_parsed += 1
+        if self.n_frames_parsed == len(os.listdir(self.framesFolder)):
+            print("Received response:")
+            full_transcript = str(self.audio_response + self.frame_response)
+            print(full_transcript)
+            self.channel.basic_publish(
+                exchange='',
+                routing_key=self.reply_to,
+                body=self.audio_response.encode('utf-8'))
+            self.remove_directories()
 
 
 if __name__ == "__main__":
@@ -168,3 +185,5 @@ if __name__ == "__main__":
 
     print(' [*] Waiting for messages.')
     parser.channel.start_consuming()
+    parser.audio_channel.start_consuming()
+    parser.frame_channel.start_consuming()
