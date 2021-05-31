@@ -21,7 +21,7 @@ func languageDetectionService(w http.ResponseWriter, r *http.Request) {
     }
 	langInfo := whatlanggo.Detect(pack.Phrase)
 	w.Header().Set("Content-Type", "application/json")
-    fmt.Fprintf(w, "{\"phrase\": \"%+v\",\"language\": \"%+v\"}", pack.Phrase, langInfo.Lang.String())
+    fmt.Fprintf(w, "{\"phrase\": \"%+v\", \"language\": \"%+v\"}", pack.Phrase, langInfo.Lang.String())
 }
 
 func handleRequests() {
