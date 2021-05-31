@@ -5,6 +5,10 @@ import pika
 import pathlib
 import os
 
+from PIL import Image
+
+import pytesseract
+
 
 class ImageRecognition:
     def __init__(self):
@@ -18,9 +22,8 @@ class ImageRecognition:
                                    aws_session_token=self.credentials['aws_session_token']
                                    )
 
-        self.response = []
         self.pathIn = ""
-        self.content = []
+        self.content = ""
 
         if len(sys.argv) > 1:
             rabbit_host = sys.argv[1]
@@ -42,35 +45,35 @@ class ImageRecognition:
     def detect_image(self):
         with open(self.pathIn, 'rb') as image:
             try:
-                self.response = self.client.detect_labels(Image={'Bytes': image.read()})
+                resp = self.client.detect_labels(Image={'Bytes': image.read()})
+                for label in resp['Labels']:
+                    self.content += " " + str(label['Name'])
             except:
-                self.response=[]
+                pass
 
+            ocr_result = pytesseract.image_to_string(Image.open(self.pathIn))
+            self.content += " " + str(ocr_result)
 
     def callback(self, ch, method, properties, body):
         # run aws recognition
-
         tmp_path = str(body.decode())
+        print("Parsing file: " + tmp_path)
         self.pathIn = pathlib.Path('../../storage',tmp_path)
         self.detect_image()
 
-        try:
-            for label in self.response['Labels']:
-                self.content.append(str(label['Name']))
-        except:
-            self.content=['']
-            
+        print("Content: " + str(self.content))
+
         ch.basic_publish(
-                    exchange='',
-                    routing_key=properties.reply_to,
-                    properties=pika.BasicProperties(),
-                    body=str(self.content))
+            exchange='',
+            routing_key=properties.reply_to,
+            properties=pika.BasicProperties(),
+            body=str(self.content))
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
         self.response = []
         self.content = []
 
 if __name__ == "__main__":
+    print("Image parser started")
     recognizer = ImageRecognition()
     recognizer.image_channel.start_consuming()
-
