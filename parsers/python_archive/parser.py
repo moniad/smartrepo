@@ -68,7 +68,7 @@ def main(args):
     connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_host, 5672))
     channel = connection.channel()
 
-    queues = ['tar', 'zip']
+    queues = ['tar', 'zip', 'gz']
     for queue in queues:
         channel.queue_declare(queue=queue)
         channel.basic_consume(queue=queue,
