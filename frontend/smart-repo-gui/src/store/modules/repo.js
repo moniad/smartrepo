@@ -33,7 +33,7 @@ const repoModule = {
     },
     actions: {
         uploadFiles(
-            { commit, dispatch, rootGetters, getters, rootState, state }, {file, path}
+            { commit, dispatch, rootGetters, getters, rootState, state }, {file, path, retVal}
         ) {
             axios.post("http://localhost:7777/upload", file,
                 {
@@ -45,14 +45,22 @@ const repoModule = {
                 .then(async response => {
                     if (response.status === 200) {
                         console.log("Response: " + response.data)
-                        commit('FILES_UPLOADED')
-                        dispatch('loadFiles',path);
+                        if (response.data.startsWith("FILE_ALREADY_EXISTS:")) {
+                            retVal.exitCode = 3;
+                            retVal.description = "File \"" + response.data.substring(21) + "\" already exists in this directory.";
+                        } else {
+                            commit('FILES_UPLOADED')
+                            dispatch('loadFiles', path);
+                            retVal.exitCode = 0;
+                        }
                     } else {
                         console.log("ERROR: (" + response.status + ")")
+                        retVal.exitCode = 2;
                     }
                 })
                 .catch(error => {
                     console.error("An error occurred during receiving response!\n", error);
+                    retVal.exitCode = 1;
                 })
         },
         loadFiles({ commit, dispatch, rootGetters, getters, rootState, state }, name){
