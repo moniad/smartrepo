@@ -54,9 +54,12 @@ class ImageRecognition:
         self.pathIn = pathlib.Path('../../storage',tmp_path)
         self.detect_image()
 
-        for label in self.response['Labels']:
-            self.content.append(str(label['Name']))
-
+        try:
+            for label in self.response['Labels']:
+                self.content.append(str(label['Name']))
+        except:
+            self.content=['']
+            
         ch.basic_publish(
                     exchange='',
                     routing_key=properties.reply_to,
