@@ -88,6 +88,16 @@ services:
     networks:
       smart-repo-network:
 
+  smart-repo-lang-detect:
+    build:
+      context: ../language-detection
+    image: smart-repo-lang-detect:latest
+    ports:
+      - 10000:10000
+    restart: unless-stopped
+    networks:
+      smart-repo-network:
+
   smart-repo-pdf-tika:
     build:
       context: ../parsers/pdf_tika
@@ -192,16 +202,6 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
-  smart-repo-lang-detect:
-    build:
-      context: ../language-detection
-    image: smart-repo-lang-detect:latest
-    ports:
-      - 10000:10000
-    restart: unless-stopped
-    networks:
-      smart-repo-network:
-
   smart-repo-python-archive:
     build:
       context: ../parsers/python_archive
@@ -223,6 +223,21 @@ services:
       args:
         - RABBITMQ_HOST=${RABBITMQ_HOST}
     image: smart-repo-video:latest
+    restart: unless-stopped
+    networks:
+      rabbit-network:
+    volumes:
+      - ../storage:/storage
+    depends_on:
+      smart-repo-rabbitmq:
+        condition: service_healthy
+
+  smart-repo-audio-converter:
+    build:
+      context: ../parsers/audio_converter
+      args:
+        - RABBITMQ_HOST=${RABBITMQ_HOST}
+    image: smart-repo-audio-converter:latest
     restart: unless-stopped
     networks:
       rabbit-network:
