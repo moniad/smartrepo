@@ -18,7 +18,11 @@ public enum AcceptableFileExtension {
     wav("wav"),
     jpg("jpg"),
     png("png"),
-    mp4("mp4");
+    mp4("mp4"),
+    mov("mov"),
+    wmv("wmv"),
+    avi("avi"),
+    mpeg("mpeg");
 
     private final String name;
 
