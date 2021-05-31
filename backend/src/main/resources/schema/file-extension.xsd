@@ -34,6 +34,10 @@
             <xs:enumeration value="tar"/>
             <xs:enumeration value="gz"/>
             <xs:enumeration value="wav"/>
+            <xs:enumeration value="mp3"/>
+            <xs:enumeration value="ogg"/>
+            <xs:enumeration value="flac"/>
+            <xs:enumeration value="aac"/>
             <xs:enumeration value="jpg"/>
             <xs:enumeration value="png"/>
             <xs:enumeration value="mp4"/>

@@ -16,13 +16,12 @@ public enum AcceptableFileExtension {
     tar("tar"),
     gz("gz"),
     wav("wav"),
+    flac("flac"),
+    aac("aac"),
+    ogg("ogg"),
+    mp3("mp3"),
     jpg("jpg"),
-    png("png"),
-    mp4("mp4"),
-    mov("mov"),
-    wmv("wmv"),
-    avi("avi"),
-    mpeg("mpeg");
+    png("png");
 
     private final String name;
 
