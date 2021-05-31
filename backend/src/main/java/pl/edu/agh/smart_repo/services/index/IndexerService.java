@@ -17,7 +17,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.index.query.WildcardQueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.search.SearchHit;
@@ -77,10 +77,10 @@ public class IndexerService {
             log.info("Index document response: '" + indexResponse + "'");
         } catch (IOException e) {
             log.error("Unexpected error while connecting to ElasticSearch (index document mappings)");
-            return new Result(ResultType.FAILURE);
+            return new Result(ResultType.FATAL_FAILURE);
         } catch (ElasticsearchStatusException e) {
             log.error("Cannot index document. Message: " + e.getMessage());
-            return new Result(ResultType.FAILURE);
+            return new Result(ResultType.FATAL_FAILURE);
         }
 
         return new Result(ResultType.SUCCESS);
@@ -95,10 +95,10 @@ public class IndexerService {
             log.info("Index response: " + deleteResponse);
         } catch (IOException e) {
             log.error("Unexpected error while connecting to ElasticSearch (delete from index)");
-            return new Result(ResultType.FAILURE, failureMessage);
+            return new Result(ResultType.FATAL_FAILURE, failureMessage);
         } catch (ElasticsearchStatusException e) {
             log.error("Cannot delete file from index. Message: " + e.getMessage());
-            return new Result(ResultType.FAILURE, failureMessage);
+            return new Result(ResultType.FATAL_FAILURE, failureMessage);
         }
 
         return new Result(ResultType.SUCCESS, String.format("File %s deleted successfully", document.getName()));
@@ -171,7 +171,10 @@ public class IndexerService {
                     for (DocumentField documentField : DocumentField.values()) {
                         builder.startObject(documentField.toString());
                         {
-                            builder.field("type", "text");
+                            if (documentField == PATH)
+                                builder.field("type", "keyword");
+                            else
+                                builder.field("type", "text");
                         }
                         builder.endObject();
                     }
@@ -193,9 +196,9 @@ public class IndexerService {
         return new IndexRequest(indexName).source(jsonMap);
     }
 
-    private DeleteByQueryRequest createDeleteFileFromIndexRequest(DocumentStructure documentStructure) { //todo: this needs to be fixed. File is not deleted from index
+    private DeleteByQueryRequest createDeleteFileFromIndexRequest(DocumentStructure documentStructure) {
         DeleteByQueryRequest request = new DeleteByQueryRequest(indexName);
-        request.setQuery(new TermQueryBuilder(PATH.toString(), documentStructure.getPath()));
+        request.setQuery(new WildcardQueryBuilder(PATH.toString(), documentStructure.getPath() + "*"));
         return request;
     }
 }

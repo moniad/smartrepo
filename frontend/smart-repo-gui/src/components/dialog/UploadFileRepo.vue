@@ -12,6 +12,7 @@
       >
         Upload File
       </v-btn>
+      <FileAlreadyExistsError v-model="showFileAlreadyExistsErrorDialog" :description="fileAlreadyExistsErrorDialogDescription"/>
     </template>
     <v-card>
       <v-card-title class="headline">
@@ -62,6 +63,7 @@
 /* eslint-disable no-unused-vars */
 
 import { mapActions } from "vuex";
+import FileAlreadyExistsError from "./FileAlreadyExistsError";
 export default {
   name: "UploadFileRepo",
   data() {
@@ -69,23 +71,36 @@ export default {
       active: false,
       fileList: [],
       title: 'Upload File',
-      path: ''
+      path: '',
+      showFileAlreadyExistsErrorDialog: false,
+      fileAlreadyExistsErrorDialogDescription: ''
     };
   },
   components: {
+    FileAlreadyExistsError
   },
   methods: {
     ...mapActions("repo",["uploadFiles"]),
+    sleep (ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    },
     cancel() {
       this.fileList =[]
       this.active = !this.active
     },
-    submitFiles(){
+    async submitFiles(){
       let formData = new FormData();
       formData.append('files',this.fileList[0])
       formData.append('path', this.path);
-      this.uploadFiles({file : formData, path: this.path})
-      this.cancel()
+      var retVal = { exitCode: -1, description: '' };
+      this.uploadFiles({file: formData, path: this.path, retVal});
+      await this.sleep(100)
+      console.log("retVal.exitCode = " + retVal.exitCode)
+      if (retVal.exitCode === 3) {
+        this.showFileAlreadyExistsErrorDialog = true
+        this.fileAlreadyExistsErrorDialogDescription = retVal.description
+      } else
+        this.cancel()
     },
     onChange() {
       this.fileList.push(...this.$refs.file.files)

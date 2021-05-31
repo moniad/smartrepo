@@ -37,8 +37,8 @@ public class Result {
         return type == ResultType.SUCCESS;
     }
 
-    public boolean isFailure() {
-        return type == ResultType.FAILURE;
+    public boolean isFatalFailure() {
+        return type == ResultType.FATAL_FAILURE;
     }
 
     @Override

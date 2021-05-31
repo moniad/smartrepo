@@ -10,6 +10,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.springframework.stereotype.Service;
 import pl.edu.agh.smart_repo.common.file.AcceptableFileExtension;
+import pl.edu.agh.smart_repo.services.directory_tree.util.MagicObjectControllerService;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -56,7 +57,9 @@ public class FileExtensionService {
             MimeType mimeType = config.getMimeRepository().forName(mediaType.toString());
             extension = getFileExtensionByFileNameOrMimeType(mimeType, file.getName());
             if (!hasAcceptableExtension(extension)) {
-                log.error("File extension '" + extension + "' is not acceptable. Available extensions are: " + Arrays.asList(AcceptableFileExtension.values()));
+                if (!extension.equals(MagicObjectControllerService.nonMagicObjectMarker)) {
+                    log.error("File extension '" + extension + "' is not acceptable. Available extensions are: " + Arrays.asList(AcceptableFileExtension.values()));
+                }
                 return null;
             }
         } catch (FileNotFoundException e) {

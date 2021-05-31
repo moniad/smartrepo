@@ -14,6 +14,7 @@ import pl.edu.agh.smart_repo.services.directory_tree.FileTreeFetcherService;
 import pl.edu.agh.smart_repo.services.search.SearchService;
 import pl.edu.agh.smart_repo.services.upload.FileUploadService;
 
+import java.nio.file.FileAlreadyExistsException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,10 +43,16 @@ public class RequestController {
 
         Result result = fileUploadService.processFile(file, path);
 
-        if (result.isSuccess())
-            return new ResponseEntity<>("added file: " + file.getOriginalFilename(), HttpStatus.OK);
+        if (!result.isFatalFailure()) {
+            if (result.isSuccess())
+                return new ResponseEntity<>("SUCCESS: added file: " + file.getOriginalFilename(), HttpStatus.OK);
+            if (result.getException() instanceof FileAlreadyExistsException)
+                return new ResponseEntity<>("FILE_ALREADY_EXISTS: " + result.getException().getMessage(), HttpStatus.OK);
+            return new ResponseEntity<>("FATAL_ERROR: unexpected server error: '" + result.getMessage() + "'",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         else
-            return new ResponseEntity<>("error while adding file: " + file.getOriginalFilename() +
+            return new ResponseEntity<>("FATAL_ERROR: error while adding file: " + file.getOriginalFilename() +
                     " error: '" + result.getMessage() + "'",
                     HttpStatus.INTERNAL_SERVER_ERROR);
     }

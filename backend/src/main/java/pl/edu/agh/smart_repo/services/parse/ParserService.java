@@ -31,7 +31,6 @@ public class ParserService {
             channel.queueDeclare(extension.toString(), false, false, false, null);
         // END: RabbitMQ setting
     }
-
     public String parse(File file, String pathRelativeToStorage) {
         try {
             String replyQueue = channel.queueDeclare().getQueue();
