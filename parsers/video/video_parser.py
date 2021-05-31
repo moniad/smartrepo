@@ -11,8 +11,8 @@ import shutil
 class VideoParser:
     def __init__(self):
         # file parameters
-        self.pathIn = pathlib.Path('../../storage')
-        self.pathOut = pathlib.Path('../../storage')
+        self.storagePath = pathlib.Path('../../storage')
+        self.pathIn = None
         self.count = 0
         self.vidCap = None
         self.success, self.image = None, None
@@ -68,17 +68,17 @@ class VideoParser:
         self.n_frames_parsed = 0
 
     def set_paths(self, video_path):
-        self.pathIn = pathlib.Path(self.pathIn, video_path)
+        self.pathIn = pathlib.Path(self.storagePath, video_path)
         self.vidCap = cv2.VideoCapture(str(self.pathIn))
         self.success, self.image = self.vidCap.read()  # check if file exists
         self.fileName = str(ntpath.basename(self.pathIn)).split(".")[0]
-        self.framesFolder = pathlib.Path(self.pathOut, self.fileName, "frames")
-        self.audioFolder = pathlib.Path(self.pathOut, self.fileName, "audio")
+        self.framesFolder = pathlib.Path(self.storagePath, self.fileName, "frames")
+        self.audioFolder = pathlib.Path(self.storagePath, self.fileName, "audio")
 
     def create_directories(self):
         # Creates temporary output directories for audio and frames
         try:
-            os.mkdir(pathlib.Path(self.pathOut, self.fileName))
+            os.mkdir(pathlib.Path(self.storagePath, self.fileName))
             os.mkdir(self.framesFolder)
             os.mkdir(self.audioFolder)
         except FileExistsError:
@@ -86,7 +86,7 @@ class VideoParser:
 
     def remove_directories(self):
         # removes temporary output directories for audio and frames
-        shutil.rmtree(pathlib.Path(self.pathOut, self.fileName))
+        shutil.rmtree(pathlib.Path(self.storagePath, self.fileName))
 
     def parse_video(self):
         # Separates video into frames
