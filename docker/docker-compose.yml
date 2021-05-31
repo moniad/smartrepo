@@ -192,16 +192,6 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
-  smart-repo-lang-detect:
-    build:
-      context: ../language-detection
-    image: smart-repo-lang-detect:latest
-    ports:
-      - 10000:10000
-    restart: unless-stopped
-    networks:
-      smart-repo-network:
-
   smart-repo-python-archive:
     build:
       context: ../parsers/python_archive
