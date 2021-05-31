@@ -14,6 +14,7 @@ import pl.edu.agh.smart_repo.common.json.EscapeCharMapper;
 import pl.edu.agh.smart_repo.common.response.Result;
 import pl.edu.agh.smart_repo.common.response.ResultType;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
+import pl.edu.agh.smart_repo.services.directory_tree.util.MagicObjectControllerService;
 import pl.edu.agh.smart_repo.services.file_extension.FileExtensionService;
 import pl.edu.agh.smart_repo.services.index.IndexerService;
 import pl.edu.agh.smart_repo.services.parse.ParserService;
@@ -36,10 +37,11 @@ public class FileUploadService {
     private final ParserService parserService;
     private final IndexerService indexerService;
     private final FileExtensionService fileExtensionService;
+    private final MagicObjectControllerService magicObjectController;
 
 
     @Autowired
-    public FileUploadService(ConfigurationFactory configurationFactory, ParserService parserService, IndexerService indexerService, FileExtensionService fileExtensionService) {
+    public FileUploadService(ConfigurationFactory configurationFactory, ParserService parserService, IndexerService indexerService, FileExtensionService fileExtensionService, MagicObjectControllerService magicObjectController) {
         storagePath = configurationFactory.getStoragePath();
         escapeCharMapper = new EscapeCharMapper();
         this.gson = new Gson();
@@ -47,6 +49,7 @@ public class FileUploadService {
         this.parserService = parserService;
         this.indexerService = indexerService;
         this.fileExtensionService = fileExtensionService;
+        this.magicObjectController = magicObjectController;
     }
 
     private Result sendDocumentStructureToIndexService(String fileName, String filePath, String parsed)
@@ -86,6 +89,7 @@ public class FileUploadService {
         }
 
         try (FileOutputStream fos = new FileOutputStream(newFile)) {
+            magicObjectController.processObjectCreation(Paths.get(path, fileName).toString());
             fos.write(file.getBytes());
         } catch (FileNotFoundException e) {
             log.error("Error: file cannot be created.");

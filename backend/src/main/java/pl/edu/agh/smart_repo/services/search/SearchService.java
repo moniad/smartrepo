@@ -1,8 +1,14 @@
 package pl.edu.agh.smart_repo.services.search;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.control.Option;
 import lombok.extern.slf4j.Slf4j;
+import org.json.simple.JSONObject;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import pl.edu.agh.smart_repo.common.file.FileInfo;
 import pl.edu.agh.smart_repo.common.request.SearchRequest;
 import pl.edu.agh.smart_repo.services.index.IndexerService;
@@ -40,9 +46,10 @@ public class SearchService {
     }
 
     public List<FileInfo> searchDocuments(String phrase, List<Language> languagesToSearchIn) {
-        log.info("Searching for: " + phrase + " in languages: " + languagesToSearchIn.toString() + "...");
 
-        Language sourceLanguage = Language.ENGLISH; //todo: detect source language
+        Language sourceLanguage = detectInputPhraseLanguage(phrase);
+
+        log.info("Searching for phrase \"" + phrase + "\" (" + sourceLanguage.toLongString() + ") in languages " + languagesToSearchIn.toString() + "...");
 
         List<String> searchPhrases = getTranslatedPhrasesToSearchFor(sourceLanguage, languagesToSearchIn, phrase);
 
@@ -51,6 +58,26 @@ public class SearchService {
                 .map(Option::get)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
+    }
+
+    private Language detectInputPhraseLanguage(String inputPhrase) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        JSONObject langDetectRequestBody = new JSONObject();
+        langDetectRequestBody.put("phrase", inputPhrase);
+        HttpEntity<String> request = new HttpEntity<String>(langDetectRequestBody.toString(), headers);
+        String responseStr = restTemplate.postForObject("http://langdetecthost:10000/langdetect", request, String.class);
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode langDetectResponseBody = mapper.readTree(responseStr);
+            String detectedLanguageStr = langDetectResponseBody.get("language").asText("English");
+            Language detectedLanguage = Language.fromValue(detectedLanguageStr);
+            return detectedLanguage;
+        } catch (JsonProcessingException | IllegalArgumentException ignored) {
+            log.error("Error: cannot detect input phrase language - using English by default.");
+            return Language.ENGLISH;
+        }
     }
 
     private List<String> getTranslatedPhrasesToSearchFor(Language sourceLanguage, List<Language> languagesToSearchIn, String phrase) {

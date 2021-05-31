@@ -65,8 +65,11 @@ services:
     environment:
       - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     networks:
+      smart-repo-network:
       rabbit-network:
       elk:
+    links:
+      - "smart-repo-lang-detect:langdetecthost"
     volumes:
       - ../storage:/storage
     depends_on:
@@ -188,6 +191,16 @@ services:
     depends_on:
       smart-repo-rabbitmq:
         condition: service_healthy
+
+  smart-repo-lang-detect:
+    build:
+      context: ../language-detection
+    image: smart-repo-lang-detect:latest
+    ports:
+      - 10000:10000
+    restart: unless-stopped
+    networks:
+      smart-repo-network:
 
   smart-repo-python-archive:
     build:
