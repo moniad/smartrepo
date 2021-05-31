@@ -6,7 +6,7 @@ import pl.edu.agh.smart_repo.common.document_fields.DocumentStructure;
 import pl.edu.agh.smart_repo.common.response.Result;
 import pl.edu.agh.smart_repo.common.response.ResultType;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
-import pl.edu.agh.smart_repo.services.directory_tree.util.FileInfoService;
+import pl.edu.agh.smart_repo.services.directory_tree.util.MagicObjectControllerService;
 import pl.edu.agh.smart_repo.services.index.IndexerService;
 
 import java.io.IOException;
@@ -17,10 +17,12 @@ import java.nio.file.*;
 public class FileManagerService {
     private final Path userFilesDirectoryPath;
     private final IndexerService indexerService;
+    private final MagicObjectControllerService magicObjectController;
 
-    public FileManagerService(ConfigurationFactory configurationFactory, IndexerService indexerService, FileInfoService fileInfoService) {
+    public FileManagerService(ConfigurationFactory configurationFactory, IndexerService indexerService, MagicObjectControllerService magicObjectController) {
         this.userFilesDirectoryPath = configurationFactory.getStoragePath();
         this.indexerService = indexerService;
+        this.magicObjectController = magicObjectController;
     }
 
     public Result createDirectory(String path) {
@@ -28,6 +30,7 @@ public class FileManagerService {
         String message = String.format("Directory %s created successfully", path);
         try {
             Files.createDirectory(resultPath);
+            magicObjectController.processObjectCreation(path);
         } catch (FileAlreadyExistsException e) {
             message = String.format("Directory %s already exists", path);
             log.error(message, e);
@@ -46,6 +49,7 @@ public class FileManagerService {
         Result result;
         try {
             Files.delete(resultPath);
+            magicObjectController.processObjectDeletion(path);
 
             DocumentStructure document = new DocumentStructure();
             document.setPath(resultPath.toString());
