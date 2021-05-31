@@ -48,7 +48,7 @@ class ImageRecognition:
             try:
                 self.response = self.client.detect_labels(Image={'Bytes': image.read()})
             except:
-                self.response=pytesseract.image_to_string(Image.open(self.pathIn)
+                self.response=pytesseract.image_to_string(Image.open(self.pathIn))
 
 
     def callback(self, ch, method, properties, body):
