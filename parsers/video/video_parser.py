@@ -65,6 +65,7 @@ class VideoParser:
 
         self.audio_response = ""
         self.frame_response = ""
+        self.audio_parsed = False
         self.n_frames_parsed = 0
 
     def set_paths(self, video_path):
@@ -121,6 +122,7 @@ class VideoParser:
     def callback(self, ch, method, properties, body):
         self.audio_response = ""
         self.frame_response = ""
+        self.audio_parsed = False
         self.n_frames_parsed = 0
         self.reply_to = properties.reply_to
 
@@ -141,41 +143,40 @@ class VideoParser:
             body=rel_audio_path.encode('utf-8'))
 
         # send frames to image parser and get results
-        # FIXME uncomment when image parser is fixed
-        # rel_frames_path = str(pathlib.Path(self.fileName, "frames"))
+        rel_frames_path = str(pathlib.Path(self.fileName, "frames"))
         print('Sending frames to image queue')
-        # for frame in os.listdir(self.framesFolder):
-        #     self.frame_channel.basic_publish(
-        #         exchange='',
-        #         routing_key='jpg',
-        #         properties=pika.BasicProperties(
-        #             reply_to=self.frame_callback_queue
-        #         ),
-        #         body=(rel_frames_path+"/"+frame).encode('utf-8'))
+        for frame in os.listdir(self.framesFolder):
+            self.frame_channel.basic_publish(
+                exchange='',
+                routing_key='jpg',
+                properties=pika.BasicProperties(
+                    reply_to=self.frame_callback_queue
+                ),
+                body=(rel_frames_path+"/"+frame).encode('utf-8'))
 
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     def on_audio_response(self, ch, method, properties, body):
         self.audio_response = body.decode()
-        # FIXME delete this when frames work
-        self.channel.basic_publish(
-            exchange='',
-            routing_key=self.reply_to,
-            body=self.audio_response.encode('utf-8'))
-        self.remove_directories()
+        self.audio_parsed = True
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+        self.send_reply()
 
     def on_frame_response(self, ch, method, properties, body):
         self.frame_response += body.decode()
-        # checking if all frames of this video have been parsed
+        ch.basic_ack(delivery_tag=method.delivery_tag)
         self.n_frames_parsed += 1
-        if self.n_frames_parsed == len(os.listdir(self.framesFolder)):
+        self.send_reply()
+
+    def send_reply(self):
+        if self.audio_parsed and self.n_frames_parsed == len(os.listdir(self.framesFolder)):
             print("Received response:")
             full_transcript = str(self.audio_response + self.frame_response)
             print(full_transcript)
             self.channel.basic_publish(
                 exchange='',
                 routing_key=self.reply_to,
-                body=self.audio_response.encode('utf-8'))
+                body=full_transcript.encode('utf-8'))
             self.remove_directories()
 
 
