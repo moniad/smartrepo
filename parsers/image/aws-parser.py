@@ -47,7 +47,7 @@ class ImageRecognition:
             try:
                 resp = self.client.detect_labels(Image={'Bytes': image.read()})
                 for label in resp['Labels']:
-                    self.content += str(label['Name'])
+                    self.content += " " + str(label['Name'])
             except:
                 pass
 
