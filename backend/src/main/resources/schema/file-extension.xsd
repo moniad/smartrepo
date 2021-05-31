@@ -34,6 +34,8 @@
             <xs:enumeration value="tar"/>
             <xs:enumeration value="gz"/>
             <xs:enumeration value="wav"/>
+            <xs:enumeration value="jpg"/>
+            <xs:enumeration value="png"/>
         </xs:restriction>
     </xs:simpleType>
 </xs:schema>
