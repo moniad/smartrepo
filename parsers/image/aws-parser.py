@@ -5,6 +5,10 @@ import pika
 import pathlib
 import os
 
+from PIL import Image
+
+import pytesseract
+
 
 class ImageRecognition:
     def __init__(self):
@@ -44,7 +48,7 @@ class ImageRecognition:
             try:
                 self.response = self.client.detect_labels(Image={'Bytes': image.read()})
             except:
-                self.response=[]
+                self.response=pytesseract.image_to_string(Image.open(self.pathIn)
 
 
     def callback(self, ch, method, properties, body):
