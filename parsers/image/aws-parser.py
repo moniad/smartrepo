@@ -5,6 +5,10 @@ import pika
 import pathlib
 import os
 
+from PIL import Image
+
+import pytesseract
+
 
 class ImageRecognition:
     def __init__(self):
@@ -18,9 +22,8 @@ class ImageRecognition:
                                    aws_session_token=self.credentials['aws_session_token']
                                    )
 
-        self.response = []
-        self.pathIn = ""
-        self.content = []
+        self.pathIn = ''
+        self.content = ''
 
         if len(sys.argv) > 1:
             rabbit_host = sys.argv[1]
@@ -32,7 +35,6 @@ class ImageRecognition:
         self.image_channel = self.connection.channel()
         self.image_channel.basic_qos(prefetch_count=1)
 
-
         self.image_channel.queue_declare(queue="jpg")
         self.image_channel.basic_consume(queue="jpg",on_message_callback=self.callback)
 
@@ -42,35 +44,44 @@ class ImageRecognition:
     def detect_image(self):
         with open(self.pathIn, 'rb') as image:
             try:
-                self.response = self.client.detect_labels(Image={'Bytes': image.read()})
+                resp = self.client.detect_labels(Image={'Bytes': image.read()})
+                for label in resp['Labels']:
+                    if label['Name'] is not None and label['Name'] != '' and label['Name'] != []:
+                        self.content += _convert_to_str(label['Name']) + ' '
             except:
-                self.response=[]
+                pass
 
+            ocr_result = pytesseract.image_to_string(Image.open(self.pathIn))
+            print(str(ocr_result))
+            self.content += _convert_to_str(ocr_result) + ' '
 
     def callback(self, ch, method, properties, body):
         # run aws recognition
-
         tmp_path = str(body.decode())
+        print("Parsing file: " + tmp_path)
         self.pathIn = pathlib.Path('../../storage',tmp_path)
         self.detect_image()
 
-        try:
-            for label in self.response['Labels']:
-                self.content.append(str(label['Name']))
-        except:
-            self.content=['']
-            
+        print("Content: " + str(self.content))
+
         ch.basic_publish(
-                    exchange='',
-                    routing_key=properties.reply_to,
-                    properties=pika.BasicProperties(),
-                    body=str(self.content))
+            exchange='',
+            routing_key=properties.reply_to,
+            properties=pika.BasicProperties(),
+            body=str(self.content))
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
-        self.response = []
-        self.content = []
+        self.content = ''
+
+
+def _convert_to_str(s):
+    new = ''
+    for x in s:
+        new += x
+
+    return new
 
 if __name__ == "__main__":
+    print("Image parser started")
     recognizer = ImageRecognition()
     recognizer.image_channel.start_consuming()
-
