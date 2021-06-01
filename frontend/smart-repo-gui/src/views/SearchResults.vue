@@ -14,7 +14,9 @@
               </v-layout>
             </td>
             <td>{{ item.name }}</td>
-            <td>{{ parseDate(item.createDate) }}</td>
+            <td>{{ item.filePath }}</td>
+            <td>{{ item.creationDate }}</td>
+            <td>{{ item.modificationDate }}</td>
             <td>{{ item.extension }}</td>
             <td>{{ item.size }}</td>
             <td class="pl-0">
@@ -50,7 +52,9 @@ export default {
       return [
         { text: "", value: "icon", align: "end" },
         { text: "Name", value: "name" },
-        { text: "Upload Date", value: "createDate" },
+        { text: "Path", value: "filePath" },
+        { text: "Creation Date", value: "creationDate" },
+        { text: 'Modification Date', value: 'modificationDate'},
         { text: "Type", value: "extension" },
         { text: "Size", value: "size" },
         { text: "Info", value: "info" },

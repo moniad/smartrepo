@@ -67,7 +67,8 @@ public class FileUploadService {
         //TODO retrieve remaining arguments from frontend`s request
         documentStructure.setName(fileName);
         documentStructure.setPath(filePath);
-        documentStructure.setExtension(fileExtensionService.getStoredFileExtension(absoluteFilePath));
+        Extension extension = fileExtensionService.getStoredFileExtension(absoluteFilePath);
+        documentStructure.setExtension(extension != null ? extension.value() : "?");
         documentStructure.setContents(parsed);
 
         fillFileSystemRelatedAttributes(absoluteFilePath, documentStructure);
@@ -127,7 +128,7 @@ public class FileUploadService {
         }
         else
         {
-            result = sendDocumentStructureToIndexService(fileName, filePath.toString(), parsed);
+            result = sendDocumentStructureToIndexService(fileName, path, parsed);
         }
 
         return result;
