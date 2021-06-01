@@ -24,8 +24,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 
 @Slf4j
 @Service
@@ -58,17 +60,17 @@ public class FileUploadService {
         fileName = escapeCharMapper.mapAll(fileName).trim();
         filePath = escapeCharMapper.mapAll(filePath).trim();
         parsed = escapeCharMapper.mapAll(parsed).trim();
+        Path absoluteFilePath = Paths.get(storagePath.toString(), filePath, fileName);
 
         DocumentStructure documentStructure = new DocumentStructure();
 
         //TODO retrieve remaining arguments from frontend`s request
         documentStructure.setName(fileName);
         documentStructure.setPath(filePath);
+        documentStructure.setExtension(fileExtensionService.getStoredFileExtension(absoluteFilePath));
         documentStructure.setContents(parsed);
 
-        String currentTimestamp = String.valueOf((int) System.currentTimeMillis() / 1000);
-        documentStructure.setCreationDate(currentTimestamp); //todo
-        documentStructure.setModificationDate(currentTimestamp); //todo
+        fillFileSystemRelatedAttributes(absoluteFilePath, documentStructure);
 
         return indexerService.indexDocument(documentStructure);
     }
@@ -129,5 +131,16 @@ public class FileUploadService {
         }
 
         return result;
+    }
+
+    private void fillFileSystemRelatedAttributes(Path absoluteFilePath, DocumentStructure documentStructure) {
+        try {
+            BasicFileAttributes fileAttributes = Files.readAttributes(absoluteFilePath, BasicFileAttributes.class);
+            documentStructure.setSize(Long.toString(fileAttributes.size()));
+            documentStructure.setCreationDate(Long.toString(fileAttributes.creationTime().toMillis() / 1000));
+            documentStructure.setModificationDate(Long.toString(fileAttributes.lastModifiedTime().toMillis() / 1000));
+        } catch (IOException e) {
+            log.error("Error: cannot get file system related attributed for file \"" + absoluteFilePath.toString() + "\".");
+        }
     }
 }
