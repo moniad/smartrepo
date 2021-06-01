@@ -202,21 +202,6 @@ services:
       smart-repo-rabbitmq:
         condition: service_healthy
 
-  smart-repo-xls-xlsx:
-    build:
-      context: ../parsers/xls_xlsx
-      args:
-        - RABBITMQ_HOST=${RABBITMQ_HOST}
-    image: smart-repo-xls-xlsx:latest
-    restart: unless-stopped
-    networks:
-      rabbit-network:
-    volumes:
-      - ../storage:/storage
-    depends_on:
-      smart-repo-rabbitmq:
-        condition: service_healthy
-
   smart-repo-video:
     build:
       context: ../parsers/video
