@@ -4,10 +4,12 @@ import pathlib
 import pika
 import ntpath
 from pydub import AudioSegment
+import logging
 
 
 class AudioConverter:
     def __init__(self):
+        logging.basicConfig(format='%(asctime)s %(levelname)s - %(message)s', level=logging.DEBUG)
         self.storagePath = pathlib.Path('../../storage')
         self.pathIn = None
         self.fileName = ""
@@ -73,8 +75,8 @@ class AudioConverter:
 
     def on_wav_response(self, ch, method, properties, body):
         self.wav_response = body.decode()
-        print("Received result:")
-        print(self.wav_response)
+        logging.info("Received result:")
+        logging.info(self.wav_response)
         ch.basic_ack(delivery_tag=method.delivery_tag)
         ch.basic_publish(
             exchange='',
@@ -88,5 +90,5 @@ if __name__ == "__main__":
 
     parser = AudioConverter()
 
-    print(' [*] Waiting for messages.')
+    logging.info('Audio converter started')
     parser.channel.start_consuming()
