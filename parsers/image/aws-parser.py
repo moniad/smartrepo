@@ -12,7 +12,7 @@ import logging
 
 class ImageRecognition:
     def __init__(self):
-        logging.basicConfig(format='%(asctime)s %(levelname)s - %(message)s', level=logging.DEBUG)
+        logging.basicConfig(format='%(asctime)s %(levelname)s - %(message)s', level=logging.INFO)
 
         self.credentials_path = pathlib.Path('aws_credentials.json')
         with open(self.credentials_path) as f:

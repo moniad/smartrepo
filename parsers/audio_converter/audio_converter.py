@@ -9,7 +9,7 @@ import logging
 
 class AudioConverter:
     def __init__(self):
-        logging.basicConfig(format='%(asctime)s %(levelname)s - %(message)s', level=logging.DEBUG)
+        logging.basicConfig(format='%(asctime)s %(levelname)s - %(message)s', level=logging.INFO)
         self.storagePath = pathlib.Path('../../storage')
         self.pathIn = None
         self.fileName = ""
@@ -61,7 +61,7 @@ class AudioConverter:
         self.create_tmp_file()
         self.reply_to = properties.reply_to
 
-        print(f"Parsing file:{self.fileName+self.ext}")
+        logging.info(f"Parsing file:{self.fileName+self.ext}")
         audio = AudioSegment.from_file(str(self.pathIn), self.ext.split(".")[-1])
         audio.export(self.pathOut, "wav")
         rel_audio_path = self.fileName+".wav"
@@ -75,8 +75,7 @@ class AudioConverter:
 
     def on_wav_response(self, ch, method, properties, body):
         self.wav_response = body.decode()
-        logging.info("Received result:")
-        logging.info(self.wav_response)
+        logging.info("Received result: " + self.wav_response)
         ch.basic_ack(delivery_tag=method.delivery_tag)
         ch.basic_publish(
             exchange='',
