@@ -24,7 +24,7 @@ public class FileInfoService {
         FileInfo fileInfo = null;
         try {
             BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-            fileInfo = new FileInfo(file.getName(), attr.creationTime().toMillis(), attr.lastModifiedTime().toMillis(), file.isDirectory(), file.length());
+            fileInfo = new FileInfo(file.getName(), attr.lastModifiedTime().toMillis(), hasFilesInside(file), file.length());
             if (!file.isDirectory()) {
                 setExtension(file, fileInfo);
             }
@@ -32,6 +32,10 @@ public class FileInfoService {
             log.error("Error while getting additional file data from " + file);
         }
         return fileInfo;
+    }
+
+    private boolean hasFilesInside(File file) {
+        return file.isDirectory() || fileExtensionService.isArchive(file.toPath());
     }
 
     private void setExtension(File file, FileInfo fileInfo) {

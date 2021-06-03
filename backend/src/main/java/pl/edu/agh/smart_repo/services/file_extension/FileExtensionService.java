@@ -19,6 +19,8 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -48,6 +50,12 @@ public class FileExtensionService {
             log.error("Cannot get stored file extension. File: {}. Message: {}", filePath, e.getMessage());
         }
         return extension;
+    }
+
+    public boolean isArchive(Path filePath) {
+        Extension extension = getStoredFileExtension(filePath);
+        Set<Extension> archiveExtensions = new HashSet<>(Arrays.asList(Extension.ZIP, Extension.TAR, Extension.GZ));
+        return archiveExtensions.contains(extension);
     }
 
     private String getExtensionByInputStream(InputStream stream, File file, Metadata metadata) {

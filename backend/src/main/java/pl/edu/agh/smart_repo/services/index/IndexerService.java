@@ -16,6 +16,7 @@ import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.WildcardQueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
@@ -105,13 +106,16 @@ public class IndexerService {
         return new Result(ResultType.SUCCESS, String.format("File %s deleted successfully", document.getName()));
     }
 
-    public Option<List<FileInfo>> search(String phrase) {
+    public Option<List<FileInfo>> search(String phrase, DocumentField whereToSearch) {
         Option<List<FileInfo>> foundFiles = Option.none();
 
         try {
             SearchRequest searchRequest = new SearchRequest(indexName);
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-            searchSourceBuilder.query(QueryBuilders.matchPhraseQuery(CONTENTS.toString(), phrase));
+            QueryBuilder query = whereToSearch.equals(CONTENTS) ?
+                    QueryBuilders.matchPhraseQuery(CONTENTS.toString(), phrase) :
+                    QueryBuilders.wildcardQuery(PATH.toString(), String.format("%s*", phrase));
+            searchSourceBuilder.query(query);
             searchRequest.source(searchSourceBuilder);
 
             log.info("Search query: '" + searchRequest.source().toString() + "'");
