@@ -5,7 +5,7 @@ function webSocketInvoke() {
 
             ws.onopen = function() {
                 console.log("Connection created");
-                const file = Math.random() < 0.5 ? 'filename.mp3' : 'filename.pdf';
+                const file = 'txtExample1.txt';
                 console.log("Need " + file + " progress info");
                 ws.send("Track " + file);
             };
