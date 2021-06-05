@@ -13,11 +13,22 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.SAXException;
 
+import com.google.common.io.Resources;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.FileWriter;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.Properties;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class TxtTikaParser {
 
     public static void main(String[] args) throws Exception {
@@ -40,15 +51,28 @@ public class TxtTikaParser {
 
         String queueName = "txt";
         channel.queueDeclare(queueName, false, false, false, null);
-        System.out.println("Waiting for messages.");
+        log.info("Waiting for messages.");
+
+        KafkaProducer<String, String> producer;
+        try (InputStream props = Resources.getResource("txtTika.properties").openStream()) {
+            Properties properties = new Properties();
+            properties.load(props);
+            producer = new KafkaProducer<>(properties);
+        }
 
         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-            String path = new String(delivery.getBody(), StandardCharsets.UTF_8);
-            path = "/storage/" + path;
+            String fileName = new String(delivery.getBody(), StandardCharsets.UTF_8);
+            String path = "/storage/" + fileName;
 
             String reply_to = delivery.getProperties().getReplyTo();
 
-            System.out.println("Parsing path: '" + path + "'");
+            log.info("Parsing path: '" + path + "'");
+
+            try {
+                send(producer,"parsers","txt", "Parsing file " + fileName);
+            } catch (Throwable throwable) {
+                log.error(throwable.getStackTrace());
+            }
 
             BodyContentHandler handler = new BodyContentHandler(-1);
 
@@ -62,8 +86,14 @@ public class TxtTikaParser {
                 e.printStackTrace();
             }
 
-            System.out.println("parsed txt succesfully");
-
+            log.info("parsed txt succesfully");
+            try {
+                send(producer,"parsers","txt", "Finished parsing file " + fileName);
+            } catch (Throwable throwable) {
+                log.error(throwable.getStackTrace());
+            }finally {
+                producer.close();
+            }
             channel.basicPublish("", reply_to, null, handler.toString().getBytes(StandardCharsets.UTF_8));
         };
 
@@ -78,10 +108,14 @@ public class TxtTikaParser {
                 Thread.sleep(retry * waitTime);
                 return factory.newConnection();
             } catch (IOException e) {
-                System.out.println("Unable to establish connection to RabbitMQ. Trial: " + retry);
+                log.error("Unable to establish connection to RabbitMQ. Trial: " + retry);
             }
         }
-        System.out.println("Unable to establish connection");
+        log.error("Unable to establish connection");
         throw new IllegalStateException("No RabbitMQConnection provided");
+    }
+
+    private static void send(KafkaProducer<String, String> producer, String topic, String key, String value) {
+        producer.send(new ProducerRecord<String, String>(topic, key, value));
     }
 }
