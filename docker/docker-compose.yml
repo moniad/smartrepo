@@ -207,10 +207,14 @@ services:
       context: ../parsers/python_archive
       args:
         - RABBITMQ_HOST=${RABBITMQ_HOST}
+        - BACKEND_ADDRESS=${BACKEND_ADDRESS}
     image: smart-repo-python-archive:latest
     restart: unless-stopped
     networks:
       rabbit-network:
+      smart-repo-network:
+    links:
+      - "smart-repo-backend:soaphost"
     volumes:
       - ../storage:/storage
     depends_on:
