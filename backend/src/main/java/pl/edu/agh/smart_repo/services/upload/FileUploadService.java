@@ -56,12 +56,11 @@ public class FileUploadService {
 
     private Result sendDocumentStructureToIndexService(String fileName, String filePath, String parsed)
     {
-
         fileName = escapeCharMapper.mapAll(fileName).trim();
         filePath = escapeCharMapper.mapAll(filePath).trim();
         parsed = escapeCharMapper.mapAll(parsed).trim();
-        Path absoluteFilePath = Paths.get(storagePath.toString(), filePath, fileName);
-
+        Path absoluteFilePath = Paths.get(filePath);
+        
         DocumentStructure documentStructure = new DocumentStructure();
 
         //TODO retrieve remaining arguments from frontend`s request
@@ -128,7 +127,7 @@ public class FileUploadService {
         }
         else
         {
-            result = sendDocumentStructureToIndexService(fileName, path, parsed);
+            result = sendDocumentStructureToIndexService(fileName, filePath.toString(), parsed);
         }
 
         return result;

@@ -122,7 +122,7 @@ public class IndexerService {
             SearchHit[] searchHits = searchResponse.getHits().getHits();
             List<FileInfo> results = Arrays.stream(searchHits)
                     .map(hit -> JSON.parseObject(hit.getSourceAsString(), DocumentStructure.class))
-                    .peek(documentStructure -> log.info("Search hit: '" + Paths.get(documentStructure.getPath(), documentStructure.getName()).toString() + "'"))
+                    .peek(documentStructure -> log.info("Search hit: '" + Paths.get(documentStructure.getPath()).toString() + "'"))
                     .map(FileInfo::of)
                     .collect(Collectors.toList());
             log.info("]");
