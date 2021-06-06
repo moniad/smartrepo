@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static pl.edu.agh.smart_repo.common.document_fields.DocumentField.CONTENTS;
+import static pl.edu.agh.smart_repo.common.document_fields.DocumentField.PATH;
 
 @Slf4j
 @Service
@@ -50,8 +51,6 @@ public class IndexerService {
     private final String indexWithHost;
     private final String indexName;
     private final RestHighLevelClient restHighLevelClient;
-
-    private static final String pathForDelKeyword = "del_path";
 
     @Autowired
     public IndexerService(ConfigurationFactory configurationFactory,
@@ -170,12 +169,14 @@ public class IndexerService {
             {
                 builder.startObject("properties");
                 {
-                    builder.startObject(pathForDelKeyword);
-                    builder.field("type", "keyword");
-                    builder.endObject();
                     for (DocumentField documentField : DocumentField.values()) {
                         builder.startObject(documentField.toString());
-                        builder.field("type", "text");
+                        {
+                            if (documentField == PATH)
+                                builder.field("type", "keyword");
+                            else
+                                builder.field("type", "text");
+                        }
                         builder.endObject();
                     }
                 }
@@ -190,7 +191,6 @@ public class IndexerService {
 
     private IndexRequest createIndexDocumentRequest(DocumentStructure documentStructure) {
         Map<String, Object> jsonMap = new HashMap<>();
-        jsonMap.put(pathForDelKeyword, documentStructure.getPath());
         for (DocumentField documentField : DocumentField.values()) {
             jsonMap.put(documentField.toString(), documentStructure.getByDocumentField(documentField));
         }
@@ -199,7 +199,7 @@ public class IndexerService {
 
     private DeleteByQueryRequest createDeleteFileFromIndexRequest(DocumentStructure documentStructure) {
         DeleteByQueryRequest request = new DeleteByQueryRequest(indexName);
-        request.setQuery(new WildcardQueryBuilder(pathForDelKeyword, documentStructure.getPath() + "*"));
+        request.setQuery(new WildcardQueryBuilder(PATH.toString(), documentStructure.getPath() + "*"));
         return request;
     }
 }
