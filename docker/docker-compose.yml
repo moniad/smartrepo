@@ -88,16 +88,6 @@ services:
     networks:
       smart-repo-network:
 
-  smart-repo-lang-detect:
-    build:
-      context: ../language-detection
-    image: smart-repo-lang-detect:latest
-    ports:
-      - 10000:10000
-    restart: unless-stopped
-    networks:
-      smart-repo-network:
-
   smart-repo-pdf-tika:
     build:
       context: ../parsers/pdf_tika
@@ -201,6 +191,16 @@ services:
     depends_on:
       smart-repo-rabbitmq:
         condition: service_healthy
+
+  smart-repo-lang-detect:
+    build:
+      context: ../language-detection
+    image: smart-repo-lang-detect:latest
+    ports:
+      - 10000:10000
+    restart: unless-stopped
+    networks:
+      smart-repo-network:
 
   smart-repo-python-archive:
     build:

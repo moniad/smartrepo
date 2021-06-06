@@ -21,7 +21,12 @@ public enum AcceptableFileExtension {
     ogg("ogg"),
     mp3("mp3"),
     jpg("jpg"),
-    png("png");
+    png("png"),
+    mp4("mp4"),
+    mov("mov"),
+    wmv("wmv"),
+    avi("avi"),
+    mpeg("mpeg");
 
     private final String name;
 
