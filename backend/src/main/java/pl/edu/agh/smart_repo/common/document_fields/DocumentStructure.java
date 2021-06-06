@@ -12,7 +12,8 @@ public class DocumentStructure {
     private String creationDate;
     private String modificationDate;
     private String language;
-//    private String size; extension todo
+    private String size;
+    private String extension;
 
     public void setByDocumentField(DocumentField documentField, String val) {
         switch (documentField) {
@@ -37,6 +38,12 @@ public class DocumentStructure {
             case LANGUAGE:
                 this.language = val;
                 break;
+            case SIZE:
+                this.size = val;
+                break;
+            case EXTENSION:
+                this.extension = val;
+                break;
         }
     }
 
@@ -56,6 +63,10 @@ public class DocumentStructure {
                 return this.modificationDate;
             case LANGUAGE:
                 return this.language;
+            case SIZE:
+                return this.size;
+            case EXTENSION:
+                return this.extension;
             default:
                 return null;
         }

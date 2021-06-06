@@ -24,7 +24,7 @@ public class FileInfoService {
         FileInfo fileInfo = null;
         try {
             BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-            fileInfo = new FileInfo(file.getName(), attr.creationTime().toMillis(), file.isDirectory(), file.length());
+            fileInfo = new FileInfo(file.getName(), attr.creationTime().toMillis(), attr.lastModifiedTime().toMillis(), file.isDirectory(), file.length());
             if (!file.isDirectory()) {
                 setExtension(file, fileInfo);
             }
