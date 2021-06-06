@@ -65,7 +65,10 @@ def main(args):
     else:
         rabbitmq_host = 'localhost'
 
-    connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_host, 5672))
+    params = pika.ConnectionParameters(host=rabbitmq_host, port=5672,
+                                       heartbeat=600,
+                                       blocked_connection_timeout=300)
+    connection = pika.BlockingConnection(params)
     channel = connection.channel()
 
     queues = ['tar', 'zip', 'gz']

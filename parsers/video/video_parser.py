@@ -28,8 +28,10 @@ class VideoParser:
             rabbit_host = "localhost"
 
         # RabbitMQ initialization
-        self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=rabbit_host, port=5672))
+        params = pika.ConnectionParameters(host=rabbit_host, port=5672,
+                                           heartbeat=600,
+                                           blocked_connection_timeout=300)
+        self.connection = pika.BlockingConnection(params)
         self.video_channel = self.connection.channel()
         self.video_channel.basic_qos(prefetch_count=1)
 

@@ -22,6 +22,7 @@ class Parser {
         }
 
         def factory = new ConnectionFactory()
+        factory.requestedHeartbeat = 600
         factory.host = rabbitHost
         factory.port = rabbitPort
         def connection = retryConnection(factory)
