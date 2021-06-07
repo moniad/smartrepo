@@ -18,6 +18,7 @@ class XlsXlsxParser {
 
             val factory = ConnectionFactory()
             factory.requestedHeartbeat = 600
+            factory.connectionTimeout = 1000
             factory.host = host
             factory.port = port
             val connection = retryConnection(factory)

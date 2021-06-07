@@ -23,7 +23,7 @@ class AudioConverter:
         # RabbitMQ initialization
         params = pika.ConnectionParameters(host=rabbit_host, port=5672,
                                            heartbeat=600,
-                                           blocked_connection_timeout=300)
+                                           blocked_connection_timeout=1000)
         self.connection = pika.BlockingConnection(params)
         self.channel = self.connection.channel()
         self.reply_to = ""

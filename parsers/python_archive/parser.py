@@ -86,7 +86,7 @@ def main(args):
 
     params = pika.ConnectionParameters(host=rabbitmq_host, port=5672,
                                        heartbeat=600,
-                                       blocked_connection_timeout=300)
+                                       blocked_connection_timeout=1000)
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
 

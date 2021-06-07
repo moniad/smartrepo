@@ -33,7 +33,7 @@ class ImageRecognition:
         # RabbitMQ initialization
         params = pika.ConnectionParameters(host=rabbit_host, port=5672,
                                            heartbeat=600,
-                                           blocked_connection_timeout=300)
+                                           blocked_connection_timeout=1000)
         self.connection = pika.BlockingConnection(params)
         self.image_channel = self.connection.channel()
         self.image_channel.basic_qos(prefetch_count=1)

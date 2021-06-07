@@ -120,7 +120,7 @@ else
 end
 port = "5672"
 url = "amqp://guest:guest@" <> host <> ":" <> port
-{:ok, connection} = AMQP.Connection.open(url, heartbeat: 600)
+{:ok, connection} = AMQP.Connection.open(url, heartbeat: 600, timeout: 1000)
 {:ok, channel_extract} = AMQP.Channel.open(connection)
 IO.puts("Connection with RabbitMQ opened with host: #{host}")
 
