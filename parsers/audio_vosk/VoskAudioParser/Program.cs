@@ -90,7 +90,7 @@ namespace VoskAudioParser
         {
             var factory = new ConnectionFactory() { HostName = rabbitHost, Port = rabbitPort };
             factory.RequestedHeartbeat = TimeSpan.FromSeconds(600);
-            factory.connectionTimeout = TimeSpan.FromSeconds(1000);
+            factory.RequestedConnectionTimeout = TimeSpan.FromSeconds(1000);
             int connectionTrials = 5;
             int waitTime = 5000;
             for (int retry = 0; retry <= connectionTrials; ++retry) {
