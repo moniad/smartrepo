@@ -15,18 +15,18 @@ public class FileExtensionCheckEndpoint {
     private static final String NAMESPACE_URI = "https://agh.edu.pl/smart-repo/file-extension-service";
 
     private final FileExtensionService fileExtensionService;
-    private final String storagePath;
+    private final String tempStoragePath;
 
     public FileExtensionCheckEndpoint(FileExtensionService fileExtensionService, ConfigurationFactory configurationFactory) {
         this.fileExtensionService = fileExtensionService;
-        this.storagePath = configurationFactory.getStoragePath().toString();
+        this.tempStoragePath = configurationFactory.getTempStoragePath().toString();
     }
 
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "getFileExtensionRequest")
     @ResponsePayload
     public GetFileExtensionResponse getFileExtension(@RequestPayload GetFileExtensionRequest request) {
         GetFileExtensionResponse response = new GetFileExtensionResponse();
-        response.setExtension(fileExtensionService.getStoredFileExtension(Paths.get(storagePath, request.getPath())));
+        response.setExtension(fileExtensionService.getStoredFileExtension(Paths.get(tempStoragePath, request.getPath())));
 
         return response;
     }

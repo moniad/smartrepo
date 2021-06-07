@@ -7,7 +7,9 @@ public enum DocumentField {
     KEYWORDS("keywords"),
     CREATION_DATE("creation_date"),
     MODIFICATION_DATE("modification_date"),
-    LANGUAGE("language");
+    LANGUAGE("language"),
+    SIZE("size"),
+    EXTENSION("extension");
 
     private final String fieldName;
 

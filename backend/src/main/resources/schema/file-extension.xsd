@@ -40,6 +40,11 @@
             <xs:enumeration value="aac"/>
             <xs:enumeration value="jpg"/>
             <xs:enumeration value="png"/>
+            <xs:enumeration value="mp4"/>
+            <xs:enumeration value="mov"/>
+            <xs:enumeration value="wmv"/>
+            <xs:enumeration value="avi"/>
+            <xs:enumeration value="mpeg"/>
         </xs:restriction>
     </xs:simpleType>
 </xs:schema>

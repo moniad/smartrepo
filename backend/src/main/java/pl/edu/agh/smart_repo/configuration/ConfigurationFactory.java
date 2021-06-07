@@ -15,6 +15,7 @@ import java.util.List;
 public class ConfigurationFactory {
 
     private final Path storagePath;
+    private final Path tempStoragePath;
     private final String rabbitHost;
     private final String elasticSearchAddress;
     private final String index;
@@ -22,8 +23,10 @@ public class ConfigurationFactory {
     @Autowired
     ConfigurationFactory(ApplicationArguments appArgs,
                          @Value("${storage.path}") String storagePath,
+                         @Value("${temp.storage.path}") String tempStoragePath,
                          @Value("${elastic.index.index_name}") String index) {
         this.storagePath = Paths.get(storagePath);
+        this.tempStoragePath = Paths.get(tempStoragePath);
         this.index = index;
         List<String> args = appArgs.getNonOptionArgs();
 
@@ -60,4 +63,7 @@ public class ConfigurationFactory {
         return storagePath;
     }
 
+    public Path getTempStoragePath() {
+        return tempStoragePath;
+    }
 }

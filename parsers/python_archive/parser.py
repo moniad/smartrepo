@@ -3,14 +3,25 @@ import pika
 import shutil
 import os
 import json
+from zeep import Client
 
 storage = '/storage'
+
+def check_file_extension(file):
+    wsdl = "http://smart-repo-backend:7777/ws/fileExtension.wsdl"
+    try:
+        client = Client(wsdl)
+        response = client.service.getFileExtension(file)
+        print('RESPONSE FROM SOAP SERVER:', response)
+    except:
+        print("Cannot connect to Soap server")
+    return response
 
 def callback(ch, method, properties, body):
 
     string_body = body.decode()
 
-    print(" [x] Received %s" % string_body)
+    print(" [x] Received: %s" % string_body)
 
     orginal_path = storage + "/" + string_body
     temp_path = "__temp/" + string_body
@@ -25,28 +36,33 @@ def callback(ch, method, properties, body):
 
     for file in os.listdir(temp_path_abs):
         path = temp_path + "/" + file
-        extension = path.split('.')[-1]
+        print("FILE: ", file)
 
-        ch.basic_publish(exchange='',
-                         routing_key=extension,
-                         body=path,
-                         properties=props)
+        relative_path = string_body + "/" + file
+        extension = check_file_extension(relative_path)
+        if extension is not None:
+            ch.basic_publish(exchange='',
+                             routing_key=extension,
+                             body=path,
+                             properties=props)
 
-        method_frame = None
-        ret_body = ''
-        while method_frame is None:
-            method_frame, _, ret_body = ch.basic_get(queue=queue_id)
+            method_frame = None
+            ret_body = ''
+            while method_frame is None:
+                method_frame, _, ret_body = ch.basic_get(queue=queue_id)
 
-        print("parsed: " + file)
-        print("result: " + ret_body.decode())
+            print("Parsed: " + file)
+            print("Result: " + ret_body.decode())
 
-        ret.append(
-            {
-                'name': file,
-                'path': orginal_path + "/" + file,
-                'content': ret_body.decode()
-            }
-        )
+            ret.append(
+                {
+                    'name': file,
+                    'path': orginal_path + "/" + file,
+                    'content': ret_body.decode()
+                }
+            )
+        else:
+            print("WARNING: " + file + " has inappropriate extension. It will not be processed.")
 
     ch.queue_delete(queue=queue_id)
 

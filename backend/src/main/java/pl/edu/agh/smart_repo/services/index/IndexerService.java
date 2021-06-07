@@ -35,6 +35,7 @@ import pl.edu.agh.smart_repo.common.response.ResultType;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -121,7 +122,7 @@ public class IndexerService {
             SearchHit[] searchHits = searchResponse.getHits().getHits();
             List<FileInfo> results = Arrays.stream(searchHits)
                     .map(hit -> JSON.parseObject(hit.getSourceAsString(), DocumentStructure.class))
-                    .peek(documentStructure -> log.info("Search hit: '" + documentStructure.getPath() + "'"))
+                    .peek(documentStructure -> log.info("Search hit: '" + Paths.get(documentStructure.getPath()).toString() + "'"))
                     .map(FileInfo::of)
                     .collect(Collectors.toList());
             log.info("]");
