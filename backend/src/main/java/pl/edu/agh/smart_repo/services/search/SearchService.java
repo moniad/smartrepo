@@ -6,9 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.control.Option;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import pl.edu.agh.smart_repo.common.document_fields.DocumentField;
 import pl.edu.agh.smart_repo.common.file.FileInfo;
 import pl.edu.agh.smart_repo.common.request.SearchRequest;
 import pl.edu.agh.smart_repo.services.index.IndexerService;
@@ -53,7 +56,8 @@ public class SearchService {
 
         List<String> searchPhrases = getTranslatedPhrasesToSearchFor(sourceLanguage, languagesToSearchIn, phrase);
 
-        return searchPhrases.stream().map(indexerService::search)
+        return searchPhrases.stream()
+                .map(phraseToSearch -> indexerService.search(phraseToSearch, DocumentField.CONTENTS))
                 .filter(result -> !result.isEmpty())
                 .map(Option::get)
                 .flatMap(Collection::stream)
