@@ -1,6 +1,6 @@
 package pl.edu.agh.smart_repo.services.file_extension;
 
-import https.agh_edu_pl.smart_repo.file_extension_service.Extension;
+import https.agh_edu_pl.smart_repo.file_extension_service.FileExtension;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.tika.config.TikaConfig;
@@ -37,13 +37,13 @@ public class FileExtensionService {
         return extension;
     }
 
-    public Extension getStoredFileExtension(Path filePath) {
-        Extension extension = null;
+    public FileExtension getStoredFileExtension(Path filePath) {
+        FileExtension extension = null;
         try {
             Metadata metadata = new Metadata();
             InputStream stream = TikaInputStream.get(filePath, metadata);
             String fileExtension = getExtensionByInputStream(stream, filePath.toFile(), metadata);
-            extension = Extension.fromValue(fileExtension);
+            extension = FileExtension.fromValue(fileExtension);
         } catch (Exception e) {
             log.error("Cannot get stored file extension. File: {}. Message: {}", filePath, e.getMessage());
         }

@@ -12,7 +12,7 @@
       >
         Upload File
       </v-btn>
-      <FileAlreadyExistsError v-model="showFileAlreadyExistsErrorDialog" :description="fileAlreadyExistsErrorDialogDescription"/>
+      <BackendFileUploadError v-model="showBackendErrorDialog" :description="fileAlreadyExistsErrorDialogDescription"/>
     </template>
     <v-card>
       <v-card-title class="headline">
@@ -63,7 +63,7 @@
 /* eslint-disable no-unused-vars */
 
 import { mapActions } from "vuex";
-import FileAlreadyExistsError from "./FileAlreadyExistsError";
+import BackendFileUploadError from "./BackendFileUploadError";
 export default {
   name: "UploadFileRepo",
   data() {
@@ -72,12 +72,12 @@ export default {
       fileList: [],
       title: 'Upload File',
       path: '',
-      showFileAlreadyExistsErrorDialog: false,
+      showBackendErrorDialog: false,
       fileAlreadyExistsErrorDialogDescription: ''
     };
   },
   components: {
-    FileAlreadyExistsError
+    BackendFileUploadError
   },
   methods: {
     ...mapActions("repo",["uploadFiles"]),
@@ -97,7 +97,7 @@ export default {
       await this.sleep(100)
       console.log("retVal.exitCode = " + retVal.exitCode)
       if (retVal.exitCode === 3) {
-        this.showFileAlreadyExistsErrorDialog = true
+        this.showBackendErrorDialog = true
         this.fileAlreadyExistsErrorDialogDescription = retVal.description
       } else
         this.cancel()

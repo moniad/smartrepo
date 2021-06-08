@@ -9,6 +9,7 @@ import pl.edu.agh.smart_repo.common.file.FileInfo;
 import pl.edu.agh.smart_repo.common.request.CreateDirectoryRequest;
 import pl.edu.agh.smart_repo.common.request.SearchRequest;
 import pl.edu.agh.smart_repo.common.response.Result;
+import pl.edu.agh.smart_repo.exception.UnsupportedFileExtension;
 import pl.edu.agh.smart_repo.services.directory_tree.FileManagerService;
 import pl.edu.agh.smart_repo.services.directory_tree.FileTreeFetcherService;
 import pl.edu.agh.smart_repo.services.search.SearchService;
@@ -39,8 +40,6 @@ public class RequestController {
     @ResponseBody
     public ResponseEntity<String> uploadFile(@RequestParam("files") MultipartFile file, @RequestParam("path") String path) {
 
-        //TODO file extension could be checked here, change fileService to accept MultipartFile
-
         Result result = fileUploadService.processFile(file, path);
 
         if (!result.isFatalFailure()) {
@@ -48,10 +47,12 @@ public class RequestController {
                 return new ResponseEntity<>("SUCCESS: added file: " + file.getOriginalFilename(), HttpStatus.OK);
             if (result.getException() instanceof FileAlreadyExistsException)
                 return new ResponseEntity<>("FILE_ALREADY_EXISTS: " + result.getException().getMessage(), HttpStatus.OK);
+            if (result.getException() instanceof UnsupportedFileExtension) {
+                return new ResponseEntity<>("UNSUPPORTED_FILE_EXTENSION: " + result.getException().getMessage(), HttpStatus.OK);
+            }
             return new ResponseEntity<>("FATAL_ERROR: unexpected server error: '" + result.getMessage() + "'",
                     HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        else
+        } else
             return new ResponseEntity<>("FATAL_ERROR: error while adding file: " + file.getOriginalFilename() +
                     " error: '" + result.getMessage() + "'",
                     HttpStatus.INTERNAL_SERVER_ERROR);

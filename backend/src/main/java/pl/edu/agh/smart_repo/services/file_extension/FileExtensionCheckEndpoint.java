@@ -26,7 +26,7 @@ public class FileExtensionCheckEndpoint {
     @ResponsePayload
     public GetFileExtensionResponse getFileExtension(@RequestPayload GetFileExtensionRequest request) {
         GetFileExtensionResponse response = new GetFileExtensionResponse();
-        response.setExtension(fileExtensionService.getStoredFileExtension(Paths.get(tempStoragePath, request.getPath())));
+        response.setFileExtension(fileExtensionService.getStoredFileExtension(Paths.get(tempStoragePath, request.getPath())));
 
         return response;
     }

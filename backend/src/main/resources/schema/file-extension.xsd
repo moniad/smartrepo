@@ -12,12 +12,12 @@
     <xs:element name="getFileExtensionResponse">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="extension" type="tns:extension"/>
+                <xs:element name="fileExtension" type="tns:fileExtension"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
 
-    <xs:simpleType name="extension">
+    <xs:simpleType name="fileExtension">
         <xs:restriction base="xs:string">
             <xs:enumeration value="pdf"/>
             <xs:enumeration value="xlsx"/>
@@ -27,9 +27,6 @@
             <xs:enumeration value="docx"/>
             <xs:enumeration value="pptx"/>
             <xs:enumeration value="ppt"/>
-            <xs:enumeration value="odt"/>
-            <xs:enumeration value="ods"/>
-            <xs:enumeration value="odg"/>
             <xs:enumeration value="zip"/>
             <xs:enumeration value="tar"/>
             <xs:enumeration value="gz"/>

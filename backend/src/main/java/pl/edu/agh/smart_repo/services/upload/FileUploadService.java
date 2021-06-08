@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import https.agh_edu_pl.smart_repo.file_extension_service.Extension;
+import https.agh_edu_pl.smart_repo.file_extension_service.FileExtension;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,6 +14,7 @@ import pl.edu.agh.smart_repo.common.json.EscapeCharMapper;
 import pl.edu.agh.smart_repo.common.response.Result;
 import pl.edu.agh.smart_repo.common.response.ResultType;
 import pl.edu.agh.smart_repo.configuration.ConfigurationFactory;
+import pl.edu.agh.smart_repo.exception.UnsupportedFileExtension;
 import pl.edu.agh.smart_repo.services.directory_tree.util.MagicObjectControllerService;
 import pl.edu.agh.smart_repo.services.file_extension.FileExtensionService;
 import pl.edu.agh.smart_repo.services.index.IndexerService;
@@ -28,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 
 @Slf4j
 @Service
@@ -54,19 +56,17 @@ public class FileUploadService {
         this.magicObjectController = magicObjectController;
     }
 
-    private Result sendDocumentStructureToIndexService(String fileName, String filePath, String parsed)
-    {
+    private Result sendDocumentStructureToIndexService(String fileName, String filePath, String parsed) {
         fileName = escapeCharMapper.mapAll(fileName).trim();
         filePath = escapeCharMapper.mapAll(filePath).trim();
         parsed = escapeCharMapper.mapAll(parsed).trim();
         Path absoluteFilePath = Paths.get(filePath);
-        
+
         DocumentStructure documentStructure = new DocumentStructure();
 
-        //TODO retrieve remaining arguments from frontend`s request
         documentStructure.setName(fileName);
         documentStructure.setPath(filePath);
-        Extension extension = fileExtensionService.getStoredFileExtension(absoluteFilePath);
+        FileExtension extension = fileExtensionService.getStoredFileExtension(absoluteFilePath);
         documentStructure.setExtension(extension != null ? extension.value() : "?");
         documentStructure.setContents(parsed);
 
@@ -76,13 +76,21 @@ public class FileUploadService {
     }
 
     public Result processFile(MultipartFile file, String path) {
-        //TODO: this part should be retrieved from frontend
         String fileName = file.getOriginalFilename();
         log.info("Started processing file: " + fileName);
 
         Path filePath = Paths.get(storagePath.toString(), path, fileName);
 
         File newFile = new File(filePath.toUri());
+        FileExtension extension;
+        String extensionString = fileExtensionService.getNewFileExtension(newFile);
+        try {
+            extension = FileExtension.fromValue(extensionString);
+        } catch (IllegalArgumentException e) {
+            String errorMsg = "Unacceptable file extension: " + extensionString + ". Acceptable file extensions are " + Arrays.toString(FileExtension.values());
+            log.error("{} File: {}. Message: {}", errorMsg, filePath, e.getMessage());
+            return new Result(ResultType.FAILURE, errorMsg, new UnsupportedFileExtension(extensionString));
+        }
 
         if (newFile.exists() && !newFile.isDirectory()) {
             log.error("Error: file already exists.");
@@ -109,24 +117,21 @@ public class FileUploadService {
 
         Result result = null;
 
-        Extension extension = fileExtensionService.getStoredFileExtension(filePath);
 
-        if (extension == Extension.TAR || extension == Extension.ZIP || extension == Extension.GZ) {
+        if (extension == FileExtension.TAR || extension == FileExtension.ZIP || extension == FileExtension.GZ) {
 
             JsonArray jsonArray = gson.fromJson(parsed, JsonArray.class);
             System.out.println(jsonArray.toString());
 
             for (JsonElement element : jsonArray) {
                 JsonObject jsonObject = element.getAsJsonObject();
-                String parsed_name = jsonObject.get("name").getAsString();
-                String parsed_path = jsonObject.get("path").getAsString();
-                String parsed_content = jsonObject.get("content").getAsString();
+                String parsedName = jsonObject.get("name").getAsString();
+                String parsedPath = jsonObject.get("path").getAsString();
+                String parsedContent = jsonObject.get("content").getAsString();
 
-                result = sendDocumentStructureToIndexService(parsed_name, parsed_path, parsed_content);
+                result = sendDocumentStructureToIndexService(parsedName, parsedPath, parsedContent);
             }
-        }
-        else
-        {
+        } else {
             result = sendDocumentStructureToIndexService(fileName, filePath.toString(), parsed);
         }
 

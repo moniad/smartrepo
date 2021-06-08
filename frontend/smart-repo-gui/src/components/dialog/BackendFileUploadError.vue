@@ -25,7 +25,7 @@
 /* eslint-disable no-unused-vars */
 
 export default {
-  name: "FileAlreadyExistsError",
+  name: "BackendFileUploadError",
   data() {
     return {
       title: 'Error'
@@ -42,7 +42,7 @@ export default {
     value: Boolean,
     description: {
       type: String,
-      default: 'Error: File already exists in this directory.'
+      default: 'Error: File already exists in this directory or has unacceptable extension'
     }
   },
   computed: {
