@@ -24,6 +24,8 @@ public class ParserService {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(configurationFactory.getRabbitHost());
         factory.setPort(port);
+        factory.setRequestedHeartbeat(600);
+        factory.setConnectionTimeout(1000);
         Connection connection = retryConnection(factory);
         channel = connection.createChannel();
 

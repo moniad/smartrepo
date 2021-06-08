@@ -23,6 +23,8 @@ object DocDocxParser extends App {
   val port = 5672
 
   val factory = new ConnectionFactory()
+  factory.setRequestedHeartbeat(600)
+  factory.setConnectionTimeout(1000)
   factory.setHost(host)
   factory.setPort(port)
   val connection = retryConnection(factory)

@@ -9,6 +9,7 @@ storage = '/storage'
 
 def check_file_extension(file):
     wsdl = "http://smart-repo-backend:7777/ws/fileExtension.wsdl"
+    response = None
     try:
         client = Client(wsdl)
         response = client.service.getFileExtension(file)
@@ -17,22 +18,23 @@ def check_file_extension(file):
         print("Cannot connect to Soap server")
     return response
 
+
 def callback(ch, method, properties, body):
 
     string_body = body.decode()
 
     print(" [x] Received: %s" % string_body)
 
-    orginal_path = storage + "/" + string_body
+    original_path = storage + "/" + string_body
     temp_path = "__temp/" + string_body
     temp_path_abs = storage + "/" + temp_path
 
-    shutil.unpack_archive(orginal_path, temp_path_abs)
+    shutil.unpack_archive(original_path, temp_path_abs)
 
     queue_id = ch.queue_declare(queue='').method.queue
     props = pika.spec.BasicProperties(reply_to=queue_id)
 
-    ret = [{'name': string_body, 'path': orginal_path, 'content': ''}]
+    ret = [{'name': string_body, 'path': original_path, 'content': ''}]
 
     for file in os.listdir(temp_path_abs):
         path = temp_path + "/" + file
@@ -57,7 +59,7 @@ def callback(ch, method, properties, body):
             ret.append(
                 {
                     'name': file,
-                    'path': orginal_path + "/" + file,
+                    'path': original_path + "/" + file,
                     'content': ret_body.decode()
                 }
             )
@@ -74,6 +76,7 @@ def callback(ch, method, properties, body):
                      body=json.dumps(ret)
                      )
 
+
 def main(args):
 
     if len(args) > 1:
@@ -81,7 +84,10 @@ def main(args):
     else:
         rabbitmq_host = 'localhost'
 
-    connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_host, 5672))
+    params = pika.ConnectionParameters(host=rabbitmq_host, port=5672,
+                                       heartbeat=600,
+                                       blocked_connection_timeout=1000)
+    connection = pika.BlockingConnection(params)
     channel = connection.channel()
 
     queues = ['tar', 'zip', 'gz']
@@ -92,6 +98,7 @@ def main(args):
                               on_message_callback=callback)
 
     channel.start_consuming()
+
 
 if __name__=='__main__':
     main(sys.argv)

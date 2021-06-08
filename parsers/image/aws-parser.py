@@ -31,15 +31,18 @@ class ImageRecognition:
             rabbit_host = "localhost"
 
         # RabbitMQ initialization
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbit_host, port=5672))
+        params = pika.ConnectionParameters(host=rabbit_host, port=5672,
+                                           heartbeat=600,
+                                           blocked_connection_timeout=1000)
+        self.connection = pika.BlockingConnection(params)
         self.image_channel = self.connection.channel()
         self.image_channel.basic_qos(prefetch_count=1)
 
         self.image_channel.queue_declare(queue="jpg")
-        self.image_channel.basic_consume(queue="jpg",on_message_callback=self.callback)
+        self.image_channel.basic_consume(queue="jpg", on_message_callback=self.callback)
 
         self.image_channel.queue_declare(queue="png")
-        self.image_channel.basic_consume(queue="png",on_message_callback=self.callback)
+        self.image_channel.basic_consume(queue="png", on_message_callback=self.callback)
 
     def detect_image(self):
         with open(self.pathIn, 'rb') as image:
@@ -80,6 +83,7 @@ def _convert_to_str(s):
         new += x
 
     return new
+
 
 if __name__ == "__main__":
     print("Image parser started")

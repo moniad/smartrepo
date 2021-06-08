@@ -32,6 +32,8 @@ public class PdfTikaParser {
         int port = 5672;
 
         ConnectionFactory factory = new ConnectionFactory();
+        factory.setRequestedHeartbeat(600);
+        factory.setConnectionTimeout(1000);
         factory.setHost(host);
         factory.setPort(port);
         Connection connection = retryConnection(factory);

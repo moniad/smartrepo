@@ -29,8 +29,10 @@ class VideoParser:
             rabbit_host = "localhost"
 
         # RabbitMQ initialization
-        self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=rabbit_host, port=5672))
+        params = pika.ConnectionParameters(host=rabbit_host, port=5672,
+                                           heartbeat=600,
+                                           blocked_connection_timeout=1000)
+        self.connection = pika.BlockingConnection(params)
         self.channel = self.connection.channel()
         self.audio_channel = self.connection.channel()
         self.frame_channel = self.connection.channel()
@@ -91,6 +93,9 @@ class VideoParser:
 
     def parse_video(self):
         # Separates video into frames
+        # length of video in seconds = num of frames / frames per second
+        vid_duration = self.vidCap.get(cv2.CAP_PROP_FRAME_COUNT) / self.vidCap.get(cv2.CAP_PROP_FPS)
+        frame_freq = 1 if vid_duration < 120 else 2 if vid_duration < 180 else 3
         while self.success:
             self.vidCap.set(cv2.CAP_PROP_POS_MSEC, (self.count * 1000))
             self.success, self.image = self.vidCap.read()
@@ -100,7 +105,7 @@ class VideoParser:
             # count indicates number of frames per second:
             # count + 1 is 1 frame per second,
             # count + 2 is frame per two seconds
-            self.count = self.count + 1
+            self.count = self.count + frame_freq
 
     def extract_audio(self):
         # Creates a moviepy clip and extracts audio
