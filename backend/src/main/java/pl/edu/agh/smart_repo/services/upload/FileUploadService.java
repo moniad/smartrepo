@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import https.agh_edu_pl.smart_repo.file_extension_service.Extension;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,6 +29,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 @Slf4j
 @Service
@@ -54,18 +57,20 @@ public class FileUploadService {
         this.magicObjectController = magicObjectController;
     }
 
-    private Result sendDocumentStructureToIndexService(String fileName, Extension extension, String filePath, String parsed)
+    private Result sendDocumentStructureToIndexService(String fileName, Extension extension, String filePathIndex,
+                                                       String filePathFileSystem, String parsed)
     {
         fileName = escapeCharMapper.mapAll(fileName).trim();
-        filePath = escapeCharMapper.mapAll(filePath).trim();
+        filePathIndex = escapeCharMapper.mapAll(filePathIndex).trim();
         parsed = escapeCharMapper.mapAll(parsed).trim();
-        Path absoluteFilePath = Paths.get(filePath);
+
+        Path absoluteFilePath = Paths.get(filePathFileSystem);
         
         DocumentStructure documentStructure = new DocumentStructure();
 
         //TODO retrieve remaining arguments from frontend`s request
         documentStructure.setName(fileName);
-        documentStructure.setPath(filePath);
+        documentStructure.setPath(filePathIndex);
         documentStructure.setExtension(extension.value());
         documentStructure.setContents(parsed);
 
@@ -113,21 +118,53 @@ public class FileUploadService {
         if (extension == Extension.TAR || extension == Extension.ZIP || extension == Extension.GZ) {
 
             JsonArray jsonArray = gson.fromJson(parsed, JsonArray.class);
-            System.out.println(jsonArray.toString());
+            log.info(jsonArray.toString());
+
+            boolean first = true;
+            String temp_path = null;
 
             for (JsonElement element : jsonArray) {
+
                 JsonObject jsonObject = element.getAsJsonObject();
                 String parsed_name = jsonObject.get("name").getAsString();
                 String parsed_extension = jsonObject.get("extension").getAsString();
                 String parsed_path = jsonObject.get("path").getAsString();
                 String parsed_content = jsonObject.get("content").getAsString();
 
-                result = sendDocumentStructureToIndexService(parsed_name, Extension.fromValue(parsed_extension), parsed_path, parsed_content);
+                //TODO temporary fix for finding file system related atributes
+                // for inner files - remove them after indexing on backend
+
+                //first element is always archive itself
+                if (first)
+                {
+                    //TODO storage is added as a prefix of path. This method will not work when it`s changed.
+                    ArrayList<String> path_parts = new ArrayList<>(Arrays.asList(parsed_path.split("/")));
+                    path_parts.add(2, "__temp");
+                    temp_path = String.join("/", path_parts);
+                }
+
+                String file_path_file_system = temp_path;
+                if (!first)
+                {
+                    file_path_file_system += "/" + parsed_name;
+                }
+
+                first = false;
+
+                result = sendDocumentStructureToIndexService(parsed_name, Extension.fromValue(parsed_extension),
+                                                            parsed_path, file_path_file_system, parsed_content);
+            }
+
+            try {
+                FileUtils.deleteDirectory(Paths.get(temp_path).toFile());
+            } catch (IOException e) {
+                log.error("Error: failed to delete temporary directory: " + temp_path);
             }
         }
         else
         {
-            result = sendDocumentStructureToIndexService(fileName, extension, filePath.toString(), parsed);
+            result = sendDocumentStructureToIndexService(fileName, extension, filePath.toString(),
+                                                        filePath.toString(), parsed);
         }
 
         return result;
