@@ -54,7 +54,7 @@ public class FileUploadService {
         this.magicObjectController = magicObjectController;
     }
 
-    private Result sendDocumentStructureToIndexService(String fileName, String filePath, String parsed)
+    private Result sendDocumentStructureToIndexService(String fileName, Extension extension, String filePath, String parsed)
     {
         fileName = escapeCharMapper.mapAll(fileName).trim();
         filePath = escapeCharMapper.mapAll(filePath).trim();
@@ -66,8 +66,7 @@ public class FileUploadService {
         //TODO retrieve remaining arguments from frontend`s request
         documentStructure.setName(fileName);
         documentStructure.setPath(filePath);
-        Extension extension = fileExtensionService.getStoredFileExtension(absoluteFilePath);
-        documentStructure.setExtension(extension != null ? extension.value() : "?");
+        documentStructure.setExtension(extension.value());
         documentStructure.setContents(parsed);
 
         fillFileSystemRelatedAttributes(absoluteFilePath, documentStructure);
@@ -119,15 +118,16 @@ public class FileUploadService {
             for (JsonElement element : jsonArray) {
                 JsonObject jsonObject = element.getAsJsonObject();
                 String parsed_name = jsonObject.get("name").getAsString();
+                String parsed_extension = jsonObject.get("extension").getAsString();
                 String parsed_path = jsonObject.get("path").getAsString();
                 String parsed_content = jsonObject.get("content").getAsString();
 
-                result = sendDocumentStructureToIndexService(parsed_name, parsed_path, parsed_content);
+                result = sendDocumentStructureToIndexService(parsed_name, Extension.fromValue(parsed_extension), parsed_path, parsed_content);
             }
         }
         else
         {
-            result = sendDocumentStructureToIndexService(fileName, filePath.toString(), parsed);
+            result = sendDocumentStructureToIndexService(fileName, extension, filePath.toString(), parsed);
         }
 
         return result;
