@@ -13,12 +13,22 @@ const repoModule = {
     state: () => {
         return {
             files: [],
-            isUploaded: false
+            isUploaded: false,
+            breadcrumbItems: [
+                {
+                    text: 'Home',
+                    disabled: false,
+                    href: '/'
+                },
+            ],
         };
     },
     mutations: {
         UPDATE_FILES(state, files){
             state.files = files;
+        },
+        UPDATE_BREADCRUMB_ITEMS(state, items){
+            state.breadcrumbItems = items;
         },
         FILES_UPLOADED(state){
             state.isUploaded = true;
@@ -76,6 +86,28 @@ const repoModule = {
         },
         resetFiles({ commit, dispatch, rootGetters, getters, rootState, state }){
             commit('RESTART_FILES');
+        },
+        updateBreadcrumbItems({ commit, dispatch, rootGetters, getters, rootState, state }, item){
+            const newBreadcrumbItems = []
+            const newItems = item.split('/')
+            const obj = {
+                text: 'Home',
+                disabled: false,
+                href: '/'
+            };
+            newBreadcrumbItems.push(obj)
+            newItems.shift()
+            let path = ''
+            newItems.forEach(item => {
+                path= path + '/' + item
+                const obj = {
+                        text: item,
+                        disabled: false,
+                        href: path
+                    };
+                newBreadcrumbItems.push(obj)
+            })
+            commit('UPDATE_BREADCRUMB_ITEMS',newBreadcrumbItems);
         },
         fileDelete({ commit, dispatch, rootGetters, getters, rootState, state }, path){
             console.log(path)
