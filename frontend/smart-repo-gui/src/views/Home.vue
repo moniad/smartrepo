@@ -93,6 +93,7 @@
 import {mapActions} from "vuex";
 import {repoMixin} from "../utils/mixins/repo-mixin";
 import {dataMixin} from "../utils/mixins/handle-data";
+import Breadcrumb from "../components/utils/Breadcrumb";
 export default {
   name: "home",
   data: () => ({
@@ -107,7 +108,7 @@ export default {
     directoryName: "",
   }),
   components:{
-
+    Breadcrumb
   },
   mixins: [repoMixin, dataMixin],
   computed: {
@@ -129,9 +130,11 @@ export default {
     ...mapActions("repo",["loadFiles"]),
     ...mapActions("repo", ["fileDelete"]),
     ...mapActions("repo", ["directoryPost"]),
+    ...mapActions("repo", ["updateBreadcrumbItems"]),
     to(name,directory) {
       if(directory){
         this.name = this.name +'/'+name
+        this.updateBreadcrumbItems(this.name)
         this.$router.push({
           path: this.name,
         });

@@ -23,6 +23,9 @@ def callback(ch, method, properties, body):
 
     string_body = body.decode()
 
+    if string_body[0] == '/':
+        string_body = string_body[1:]
+
     print(" [x] Received: %s" % string_body)
 
     original_path = storage + "/" + string_body
@@ -34,7 +37,7 @@ def callback(ch, method, properties, body):
     queue_id = ch.queue_declare(queue='').method.queue
     props = pika.spec.BasicProperties(reply_to=queue_id)
 
-    ret = [{'name': string_body, 'path': original_path, 'content': ''}]
+    ret = [{'name': string_body, 'extension': string_body.split('.')[-1], 'path': original_path, 'content': ''}]
 
     for file in os.listdir(temp_path_abs):
         path = temp_path + "/" + file
@@ -59,6 +62,7 @@ def callback(ch, method, properties, body):
             ret.append(
                 {
                     'name': file,
+                    'extension': extension,
                     'path': original_path + "/" + file,
                     'content': ret_body.decode()
                 }
@@ -68,7 +72,9 @@ def callback(ch, method, properties, body):
 
     ch.queue_delete(queue=queue_id)
 
-    shutil.rmtree(temp_path_abs, ignore_errors=True)
+    #TODO
+    #temporary fix for finding file system related atributes for inner files - remove them after indexing on backend
+    #shutil.rmtree(temp_path_abs, ignore_errors=True)
 
     ch.basic_publish(exchange='',
                      routing_key=properties.reply_to,
