@@ -14,6 +14,8 @@ import org.apache.poi.hwpf.extractor.WordExtractor
 import java.io.{File, FileInputStream, FileOutputStream}
 import java.nio.file.Paths
 import scala.util.{Failure, Success, Try, Using}
+import java.util.Properties
+import org.apache.kafka.clients.producer._
 
 object DocDocxParser extends App {
 
@@ -36,12 +38,21 @@ object DocDocxParser extends App {
   channel.queueDeclare(queueNameDocx, false, false, false, null)
   println("Waiting for messages - docx.")
 
+  val props = new Properties()
+  props.put("bootstrap.servers", host+":9092")
+  props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+  props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+  val producer = new KafkaProducer[String, String](props)
+
    val deliverCallbackDoc: DeliverCallback = (consumerTag, delivery) => {
 
     val path = new String(delivery.getBody(), "UTF-8")
 
     val reply_to = delivery.getProperties().getReplyTo()
     println("Parsing: '" + path + "'")
+
+    var record = new ProducerRecord[String, String]("parsers", "doc", "Started parsing file" + path)
+    producer.send(record)
 
     val extension = path.split("\\.").last
 
@@ -54,11 +65,19 @@ object DocDocxParser extends App {
               println(r)
               result = r
 
-            case Failure(r) => println(s"Cannot parse doc file. Reason: $r")}
-      case Failure(f) => println(s"Cannot find file with path: $path. Reason: $f")
+            case Failure(r) =>
+              println(s"Cannot parse doc file. Reason: $r")}
+              record = new ProducerRecord[String, String]("parsers", "doc", "Error parsing: file" + path)
+              producer.send(record)
+      case Failure(f) =>
+        println(s"Cannot find file with path: $path. Reason: $f")
+        record = new ProducerRecord[String, String]("parsers", "doc", "Error parsing: file" + path)
+        producer.send(record)
     }
 
     println("Parsed doc succesfull")
+    record = new ProducerRecord[String, String]("parsers", "doc", "Starting parsing: file" + path)
+    producer.send(record)
 
     channel.basicPublish("", reply_to, null, result.getBytes("UTF-8"))
   }
@@ -70,6 +89,9 @@ object DocDocxParser extends App {
     val reply_to = delivery.getProperties().getReplyTo()
     println("Parsing: '" + path + "'")
 
+    var record = new ProducerRecord[String, String]("parsers", "doc", "Started parsing file" + path)
+    producer.send(record)
+
     val extension = path.split("\\.").last
 
     var result = ""
@@ -80,12 +102,20 @@ object DocDocxParser extends App {
             case Success(r) =>
               println(r)
               result = r
-            case Failure(r) => println(s"Cannot parse docx file. Reason: $r")}
+            case Failure(r) =>
+              println(s"Cannot parse docx file. Reason: $r")}
+              record = new ProducerRecord[String, String]("parsers", "doc", "Error parsing file" + path)
+              producer.send(record)
 
-      case Failure(f) => println(s"Cannot find file with path: $path. Reason: $f")
+      case Failure(f) =>
+        println(s"Cannot find file with path: $path. Reason: $f")
+        record = new ProducerRecord[String, String]("parsers", "doc", "Error parsing file" + path)
+        producer.send(record)
     }
 
     println("Parsed docx succesfull")
+    record = new ProducerRecord[String, String]("parsers", "doc", "Finished parsing file" + path)
+    producer.send(record)
 
     channel.basicPublish("", reply_to, null, result.getBytes("UTF-8"))
   }

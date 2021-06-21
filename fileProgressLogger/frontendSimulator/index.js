@@ -1,7 +1,7 @@
 function webSocketInvoke() {
     if ("WebSocket" in window) {
         console.log("WebSocket is supported by your Browser!");
-        const ws = new WebSocket("ws://localhost:1234/","echo-protocol");
+        const ws = new WebSocket("ws://localhost:1235/","echo-protocol");
 
             ws.onopen = function() {
                 console.log("Connection created");

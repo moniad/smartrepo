@@ -6,6 +6,9 @@ import com.rabbitmq.client.Delivery
 import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
 import java.util.logging.Logger
+import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.ProducerRecord
+import java.util.Properties
 
 class Parser {
 
@@ -34,19 +37,32 @@ class Parser {
         }
         logger.info('Waiting for messages')
 
+        Properties props = new Properties()
+        props.put("bootstrap.servers", rabbitHost+":9092")
+        props.put("acks", "all")
+        props.put("retries", 3)
+        props.put("linger.ms", 1000)
+        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+
+        def producer = new KafkaProducer(props)
+
 
         def callback = [handle: { String consumerTag, Delivery delivery ->
             def replyTo = delivery.properties.replyTo
             def extension = delivery.envelope.routingKey
             def relativePath = new String(delivery.getBody(), StandardCharsets.UTF_8)
             def path = Paths.get(storagePath, relativePath).toString()
+            send(producer,"parsers","ppt", "Started parsing file " + path)
 
             def result = ''
             try {
                 result = extractor."$extension"(path)
                 logger.info('Parsing results:\n' + result)
+                send(producer,"parsers","ppt", "Finished parsing file " + path)
             } catch (Throwable t) {
                 logger.warning(t.message)
+                send(producer,"parsers","ppt", "Error parsing file " + path)
             }
             channel.basicPublish('', replyTo, null, result.getBytes(StandardCharsets.UTF_8))
         }] as DeliverCallback
@@ -72,6 +88,9 @@ class Parser {
         }
         logger.warning('Unable to establish connection')
         throw new IllegalStateException("No RabbitMQConnection provided")
+    }
+    private static void send(KafkaProducer producer, String topic, String key, String value) {
+        producer.send(new ProducerRecord(topic, key, value))
     }
 
 }

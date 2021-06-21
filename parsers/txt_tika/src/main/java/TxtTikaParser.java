@@ -53,12 +53,15 @@ public class TxtTikaParser {
         channel.queueDeclare(queueName, false, false, false, null);
         log.info("Waiting for messages.");
 
-        KafkaProducer<String, String> producer;
-        try (InputStream props = Resources.getResource("txtTika.properties").openStream()) {
-            Properties properties = new Properties();
-            properties.load(props);
-            producer = new KafkaProducer<>(properties);
-        }
+        Properties props = new Properties();
+        props.put("bootstrap.servers", host+":9092");
+        props.put("acks", "all");
+        props.put("retries", 3);
+        props.put("linger.ms", 1000);
+        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+
+        KafkaProducer<String, String> producer = new KafkaProducer<>(props);
 
         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
             String fileName = new String(delivery.getBody(), StandardCharsets.UTF_8);
@@ -69,9 +72,9 @@ public class TxtTikaParser {
             log.info("Parsing path: '" + path + "'");
 
             try {
-                send(producer,"parsers","txt", "Parsing file " + fileName);
+                send(producer,"parsers","txt", "Started parsing file " + fileName);
             } catch (Throwable throwable) {
-                log.error(throwable.getStackTrace());
+                log.error(throwable.getStackTrace().toString());
             }
 
             BodyContentHandler handler = new BodyContentHandler(-1);
@@ -83,15 +86,16 @@ public class TxtTikaParser {
             try (InputStream stream = FileUtils.openInputStream(initialFile)) {
                 parser.parse(stream, handler, metadata);
             } catch (IOException | SAXException | TikaException e) {
-                e.printStackTrace();
+                log.error(e.getStackTrace().toString());
+                send(producer,"parsers","txt", "Error parsing file " + fileName);
             }
 
             log.info("parsed txt succesfully");
             try {
                 send(producer,"parsers","txt", "Finished parsing file " + fileName);
             } catch (Throwable throwable) {
-                log.error(throwable.getStackTrace());
-            }finally {
+                log.error(throwable.getStackTrace().toString());
+            } finally {
                 producer.close();
             }
             channel.basicPublish("", reply_to, null, handler.toString().getBytes(StandardCharsets.UTF_8));
@@ -108,7 +112,7 @@ public class TxtTikaParser {
                 Thread.sleep(retry * waitTime);
                 return factory.newConnection();
             } catch (IOException e) {
-                log.error("Unable to establish connection to RabbitMQ. Trial: " + retry);
+                log.warn("Unable to establish connection to RabbitMQ. Trial: " + retry);
             }
         }
         log.error("Unable to establish connection");

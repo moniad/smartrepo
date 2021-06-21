@@ -6,14 +6,20 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
+import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.Producer
+import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.serialization.StringSerializer
+import org.apache.log4j.LogManager
+import java.util.Properties
 
 class XlsXlsxParser {
 
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-
-            val host = if (args.isNotEmpty()) args[0] else "localhost"
+            val logger = LogManager.getLogger(javaClass)
+            var host = if (args.isNotEmpty()) args[0] else "localhost"
             val port = 5672
 
             val factory = ConnectionFactory()
@@ -24,28 +30,33 @@ class XlsXlsxParser {
 
             val queueNameXls = "xls"
             channel.queueDeclare(queueNameXls, false, false, false, null)
-            println("Waiting for messages - xls.")
+            logger.info("Waiting for messages - xls.")
 
             val queueNameXlsx = "xlsx"
             channel.queueDeclare(queueNameXlsx, false, false, false, null)
-            println("Waiting for messages - xlsx.")
+            logger.info("Waiting for messages - xlsx.")
 
             val deliverCallbackXlsx = DeliverCallback { _, delivery ->
                 var path = String(delivery.body, Charsets.UTF_8)
                 path = "/storage/$path"
 
                 val replyTo = delivery.properties.replyTo
-                println("Parsing path: '$path'")
+                logger.info("Parsing path: '$path'")
+
+                val producer = createProducer(host)
+                producer.produceMessage("parsers", "Started parsing file $path")
 
                 var result = ""
 
                 try {
                     result = parseXlsx(path)
                 } catch (e: IOException) {
-                    e.printStackTrace()
+                    logger.error(e.getStackTrace().toString())
+                    producer.produceMessage("parsers", "Error parsing file $path")
                 }
 
-                println("\nParsed xlsx succesfully")
+                logger.info("\nParsed xlsx succesfully")
+                producer.produceMessage("parsers", "Finished parsing file $path")
                 channel.basicPublish("", replyTo, null, result.toByteArray(Charsets.UTF_8))
             }
 
@@ -54,17 +65,17 @@ class XlsXlsxParser {
                 path = "/storage/$path"
 
                 val replyTo = delivery.properties.replyTo
-                println("Parsing path: '$path'")
+                logger.info("Parsing path: '$path'")
 
                 var result = ""
 
                 try {
                     result = parseXls(path)
                 } catch (e: IOException) {
-                    e.printStackTrace()
+                    logger.error(e.getStackTrace().toString())
                 }
 
-                println("\nParsed xls succesfully")
+                logger.info("\nParsed xls succesfully")
                 channel.basicPublish("", replyTo, null, result.toByteArray(Charsets.UTF_8))
             }
 
@@ -132,16 +143,40 @@ class XlsXlsxParser {
         fun retryConnection(factory: ConnectionFactory): Connection? {
             val connectionTrials = 5
             val waitTime = 5000
+            val logger = LogManager.getLogger(javaClass)
             for (retry in 0..connectionTrials) {
                 try {
                     Thread.sleep((retry * waitTime).toLong())
                     return factory.newConnection()
                 } catch (e: IOException) {
-                    println("Unable to establish connection to RabbitMQ. Trial: $retry")
+                    logger.error("Unable to establish connection to RabbitMQ. Trial: $retry")
                 }
             }
-            println("Unable to establish connection")
+            logger.error("Unable to establish connection")
             throw IllegalStateException("No RabbitMQConnection provided")
+        }
+
+        fun createProducer(host: String): Producer<String, String> {
+            val props = Properties()
+            props["bootstrap.servers"] = host+":9092"
+            props["acks"] = "all"
+            props["retries"] = 0
+            props["linger.ms"] = 1
+            props["key.serializer"] = "org.apache.kafka.common.serialization.StringSerializer"
+            props["value.serializer"] = "org.apache.kafka.common.serialization.StringSerializer"
+
+            return KafkaProducer(props)
+        }
+
+        fun Producer<String, String>.produceMessage(topic: String, message: String) {
+            val logger = LogManager.getLogger(javaClass)
+            val message = ProducerRecord(
+                    topic, // topic
+                    "xls", // key
+                    message // value
+            )
+            logger.info("Producer sending message: $message")
+            this@produceMessage.send(message)
         }
     }
 }

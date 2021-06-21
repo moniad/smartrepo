@@ -4,24 +4,31 @@ import shutil
 import os
 import json
 from zeep import Client
+import logging
+from confluent_kafka import Producer
 
 storage = '/storage'
+logging.basicConfig(format='%(asctime)s %(levelname)s - %(message)s', level=logging.INFO)
+producer = None
+
 
 def check_file_extension(file):
     wsdl = "http://smart-repo-backend:7777/ws/fileExtension.wsdl"
     try:
         client = Client(wsdl)
         response = client.service.getFileExtension(file)
-        print('RESPONSE FROM SOAP SERVER:', response)
+        logging.info('RESPONSE FROM SOAP SERVER:', response)
     except:
-        print("Cannot connect to Soap server")
+        logging.error("Cannot connect to Soap server")
     return response
+
 
 def callback(ch, method, properties, body):
 
     string_body = body.decode()
 
-    print(" [x] Received: %s" % string_body)
+    logging.info(" [x] Received: %s" % string_body)
+    producer.produce("parsers", key="video", value=f"Started parsing file {string_body}")
 
     orginal_path = storage + "/" + string_body
     temp_path = "__temp/" + string_body
@@ -36,7 +43,7 @@ def callback(ch, method, properties, body):
 
     for file in os.listdir(temp_path_abs):
         path = temp_path + "/" + file
-        print("FILE: ", file)
+        logging.info("FILE: ", file)
 
         relative_path = string_body + "/" + file
         extension = check_file_extension(relative_path)
@@ -51,8 +58,9 @@ def callback(ch, method, properties, body):
             while method_frame is None:
                 method_frame, _, ret_body = ch.basic_get(queue=queue_id)
 
-            print("Parsed: " + file)
-            print("Result: " + ret_body.decode())
+            logging.info("Parsed: " + file)
+            logging.info("Result: " + ret_body.decode())
+            producer.produce("parsers", key="video", value=f"Finished parsing file {file}")
 
             ret.append(
                 {
@@ -62,7 +70,8 @@ def callback(ch, method, properties, body):
                 }
             )
         else:
-            print("WARNING: " + file + " has inappropriate extension. It will not be processed.")
+            logging.warning("WARNING: " + file + " has inappropriate extension. It will not be processed.")
+            producer.produce("parsers", key="video", value=f"Error parsing file {file}")
 
     ch.queue_delete(queue=queue_id)
 
@@ -74,12 +83,16 @@ def callback(ch, method, properties, body):
                      body=json.dumps(ret)
                      )
 
+
 def main(args):
 
     if len(args) > 1:
         rabbitmq_host = args[1]
     else:
         rabbitmq_host = 'localhost'
+
+    conf = {'bootstrap.servers': rabbit_host+":9092"}
+    producer = Producer(conf)
 
     connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_host, 5672))
     channel = connection.channel()
@@ -92,6 +105,7 @@ def main(args):
                               on_message_callback=callback)
 
     channel.start_consuming()
+
 
 if __name__=='__main__':
     main(sys.argv)

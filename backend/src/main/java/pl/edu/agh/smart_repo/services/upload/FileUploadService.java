@@ -28,6 +28,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -40,6 +46,7 @@ public class FileUploadService {
     private final IndexerService indexerService;
     private final FileExtensionService fileExtensionService;
     private final MagicObjectControllerService magicObjectController;
+    private final String host;
 
 
     @Autowired
@@ -52,6 +59,7 @@ public class FileUploadService {
         this.indexerService = indexerService;
         this.fileExtensionService = fileExtensionService;
         this.magicObjectController = magicObjectController;
+        this.host = configurationFactory.getRabbitHost();
     }
 
     private Result sendDocumentStructureToIndexService(String fileName, String filePath, String parsed)
@@ -79,6 +87,36 @@ public class FileUploadService {
         //TODO: this part should be retrieved from frontend
         String fileName = file.getOriginalFilename();
         log.info("Started processing file: " + fileName);
+
+        // FIXME: THIS IS A TEMPORARY PART ----------------------------------------------
+        int numConsumers = 3;
+        String groupId = "consumer-group";
+        List<String> topics = Arrays.asList("parsers");
+        ExecutorService executor = Executors.newFixedThreadPool(numConsumers);
+
+        final List<UploadProgress> consumers = new ArrayList<>();
+        for (int i = 0; i < numConsumers; i++) {
+            log.info("Creating a consumer for topics "+topics);
+            UploadProgress consumer = new UploadProgress(i, groupId, this.host, topics);
+            consumers.add(consumer);
+            executor.submit(consumer);
+        }
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                for (UploadProgress consumer : consumers) {
+                    consumer.shutdown();
+                }
+                executor.shutdown();
+                try {
+                    executor.awaitTermination(5000, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        // FIXME: END OF TEMPORARY PART -------------------------------------------------
 
         Path filePath = Paths.get(storagePath.toString(), path, fileName);
 

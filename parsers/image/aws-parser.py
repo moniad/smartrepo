@@ -8,6 +8,7 @@ from PIL import Image
 
 import pytesseract
 import logging
+from confluent_kafka import Producer
 
 
 class ImageRecognition:
@@ -43,6 +44,9 @@ class ImageRecognition:
         self.image_channel.queue_declare(queue="png")
         self.image_channel.basic_consume(queue="png", on_message_callback=self.callback)
 
+        conf = {'bootstrap.servers': rabbit_host+":9092"}
+        self.producer = Producer(conf)
+
     def detect_image(self):
         with open(self.pathIn, 'rb') as image:
             try:
@@ -60,10 +64,12 @@ class ImageRecognition:
         # run aws recognition
         tmp_path = str(body.decode())
         logging.info("Parsing file: " + tmp_path)
+        self.producer.produce("parsers", key="image", value=f"Started parsing file {tmp_path}")
         self.pathIn = pathlib.Path('../../storage', tmp_path)
         self.detect_image()
 
         logging.info("Content: " + str(self.content))
+        self.producer.produce("parsers", key="video", value=f"Finished parsing file {tmp_path}")
 
         ch.basic_publish(
             exchange='',

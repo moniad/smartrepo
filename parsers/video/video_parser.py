@@ -6,10 +6,14 @@ import pathlib
 import ntpath
 import pika
 import shutil
+import logging
+from confluent_kafka import Producer
 
 
 class VideoParser:
     def __init__(self):
+        logging.basicConfig(format='%(asctime)s %(levelname)s - %(message)s', level=logging.INFO)
+
         # file parameters
         self.storagePath = pathlib.Path('../../storage')
         self.pathIn = None
@@ -68,6 +72,9 @@ class VideoParser:
         self.audio_parsed = False
         self.n_frames_parsed = 0
 
+        conf = {'bootstrap.servers': rabbit_host+":9092"}
+        self.producer = Producer(conf)
+
     def set_paths(self, video_path):
         self.pathIn = pathlib.Path(self.storagePath, video_path)
         self.vidCap = cv2.VideoCapture(str(self.pathIn))
@@ -83,7 +90,8 @@ class VideoParser:
             os.mkdir(self.framesFolder)
             os.mkdir(self.audioFolder)
         except FileExistsError:
-            print("File with this name has already been parsed.")
+            logging.error("File with this name has already been parsed.")
+            self.producer.produce("parsers", key="video", value=f"Error parsing file {self.fileName+self.ext}")
 
     def remove_directories(self):
         # removes temporary output directories for audio and frames
@@ -113,7 +121,7 @@ class VideoParser:
         # Checks if the file is a video file and invokes frame and audio extraction
         ext = self.pathIn.suffix
         if ext not in self.video_formats:
-            print(f"Wrong file extension: {ext}", file=sys.stderr)
+            logging.error(f"Wrong file extension: {ext}")
         else:
             self.create_directories()
             self.parse_video()
@@ -127,13 +135,14 @@ class VideoParser:
         self.reply_to = properties.reply_to
 
         # parse received video
-        print(f"Parsing file: {body.decode()}")
+        logging.info(f"Parsing file: {body.decode()}")
+        self.producer.produce("parsers", key="video", value=f"Started parsing file {body.decode()}")
         self.set_paths(body.decode())
         self.parse()
 
         # send audio to audio parser and get results
         rel_audio_path = str(pathlib.Path(self.fileName, "audio", self.fileName+".wav"))
-        print('Sending audio file to audio queue')
+        logging.info('Sending audio file to audio queue')
         self.audio_channel.basic_publish(
             exchange='',
             routing_key='wav',
@@ -144,7 +153,7 @@ class VideoParser:
 
         # send frames to image parser and get results
         rel_frames_path = str(pathlib.Path(self.fileName, "frames"))
-        print('Sending frames to image queue')
+        logging.info('Sending frames to image queue')
         for frame in os.listdir(self.framesFolder):
             self.frame_channel.basic_publish(
                 exchange='',
@@ -170,9 +179,10 @@ class VideoParser:
 
     def send_reply(self):
         if self.audio_parsed and self.n_frames_parsed == len(os.listdir(self.framesFolder)):
-            print("Received response:")
+            logging.info("Received response:")
+            self.producer.produce("parsers", key="video", value=f"Finished parsing file {self.fileName+self.ext}")
             full_transcript = str(self.audio_response + self.frame_response)
-            print(full_transcript)
+            logging.info(full_transcript)
             self.channel.basic_publish(
                 exchange='',
                 routing_key=self.reply_to,
@@ -184,7 +194,7 @@ if __name__ == "__main__":
 
     parser = VideoParser()
 
-    print(' [*] Waiting for messages.')
+    logging.info(' [*] Waiting for messages.')
     parser.channel.start_consuming()
     parser.audio_channel.start_consuming()
     parser.frame_channel.start_consuming()

@@ -30,4 +30,6 @@ dependencies {
     compile group: 'org.apache.poi', name: 'poi-scratchpad', version: '5.0.0'
     compile group: 'org.apache.poi', name: 'ooxml-schemas', version: '1.4'
     compile group: 'com.rabbitmq', name: 'amqp-client', version: '5.12.0'
+    compile group: 'org.apache.kafka', name: 'kafka-clients', version: '2.8.0'
+
 }
